@@ -64,6 +64,10 @@ Shape(position, color)          x, y, color
 `checkHit(attackers, targets, maxHits)` — AABB-проверка `target.intersects(attacker.bounds())`. Если у атакующего `popping === true` (гарпун), цели помечаются на `split()`. Индексы удаляются от большего к меньшему, чтобы `splice` не сбивал порядок. Для игрока `popping` не задан, поэтому шар не разбивается.
 
 
+## Метка версии
+
+`const BUILD = "__BUILD__"` в начале скрипта. Workflow `pages.yml` при публикации заменяет её на `<7 символов хеша> <дата UTC>` и проверяет, что заглушки не осталось. `buildLabel()` возвращает «dev» для незаменённой заглушки; `drawBuildLabel()` рисует «версия: …» в правом нижнем углу на титульном экране и на паузе.
+
 ## Очки
 
 `HIT_POINTS`, `COMBO_MAX`, `SPIKE_BONUS` — таблицы и параметры. `checkHit` для каждого разбитого шара вызывает `awardHit(owner, ball)` (владелец — `harpoon.owner`) и передаёт владельца в `split`, а тот записывает его в `ball.owner` осколков. `awardHit` увеличивает `player.combo` и начисляет `HIT_POINTS[size] × comboMultiplier(combo)`. Промах — в цикле гарпунов: исчез при `hits === 0` → `owner.combo = 0`; потеря жизни тоже обнуляет серию. `burstAtSpikes` начисляет `subtreeValue(size) × SPIKE_BONUS` владельцу шара. `addScore` обновляет рекорд и сразу пишет его в `localStorage` (`loadHighScore` / `saveHighScore` оборачивают доступ в `try/catch`). `restart()` обнуляет очки и серии и запоминает `recordAtStart`; `recordBeaten` включается, когда общий счёт превысил ненулевой `recordAtStart`.
