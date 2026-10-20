@@ -33,40 +33,114 @@ test('split: осколки у стены остаются внутри поля
   }
 });
 
-test('split: осколки наследуют подъём родителя, но подпрыгивают не слабее SPLIT_KICK', () => {
+test('импульс попадания: падающий шар гасится и подбрасывается, летящий вверх — ускоряется', () => {
   const t = loadGame();
-  const make = (dy) => {
-    const b = new t.g.Circle(2, { x: 300, y: 300 }, 3, 'red');
+  const childDy = (size, dy) => {
+    const b = new t.g.Circle(size, { x: 300, y: 300 }, 3, 'red');
     b.dy = dy;
     const arr = [b];
     t.g.split(0, arr);
     return arr.map((x) => x.dy);
   };
-  assert.deepEqual(make(-12), [-12, -12]); // быстрый подъём сохраняется
-  assert.deepEqual(make(-2), [-t.g.SPLIT_KICK, -t.g.SPLIT_KICK]); // слабый — подтягивается
-  assert.deepEqual(make(9), [-t.g.SPLIT_KICK, -t.g.SPLIT_KICK]); // падающий — подбрасывается
+  const imp = t.g.hitImpulse(1);
+  const [a1, a2] = childDy(2, 9); // падал вниз: остаток скорости гасится
+  assert.ok(Math.abs(a1 + imp) < 1e-9 && a1 === a2);
+  const [b1] = childDy(2, 0);
+  assert.ok(Math.abs(b1 + imp) < 1e-9);
+  const [c1] = childDy(2, -4); // уже летел вверх: импульсы складываются
+  assert.ok(Math.abs(c1 - (-4 - imp)) < 1e-9);
 });
 
-test('split: шар размера 0 исчезает без осколков', () => {
+test('импульс попадания ограничен: из любой точки поля хватает ровно до потолка', () => {
   const t = loadGame();
-  const arr = [new t.g.Circle(0, { x: 300, y: 300 }, 3, 'red')];
+  const b = new t.g.Circle(2, { x: 300, y: 300 }, 3, 'red');
+  b.dy = -100;
+  const arr = [b];
   t.g.split(0, arr);
-  assert.equal(arr.length, 0);
+  assert.ok(arr.every((x) => Math.abs(x.dy - -t.g.maxRiseSpeed(1)) < 1e-9));
+  assert.ok(t.g.maxRiseSpeed(1) < 20);
 });
 
-test('split: при dx=0 выбирается случайное направление ±2', () => {
+test('после попадания по падающему шару осколки поднимаются ровно на HIT_RISE над точкой попадания', () => {
   const t = loadGame();
-  const arr = [new t.g.Circle(1, { x: 300, y: 300 }, 0, 'red')];
+  for (let size = 1; size <= 6; size++) {
+    const b = new t.g.Circle(size, { x: 640, y: 400 }, 2, 'red');
+    b.dy = 7; // падает
+    const arr = [b];
+    t.g.split(0, arr);
+    const child = arr[0];
+    const y0 = child.y;
+    let minY = y0;
+    for (let i = 0; i < 400 && (child.dy < 0 || i < 2); i++) { child.update(1); minY = Math.min(minY, child.y); }
+    assert.ok(Math.abs((y0 - minY) - t.g.HIT_RISE) < 1.5, `размер ${size}: подъём ${y0 - minY}`);
+  }
+});
+
+test('подъём одинаков для всех размеров, хотя импульс у «плавучих» шаров меньше', () => {
+  const t = loadGame();
+  assert.ok(t.g.hitImpulse(5) < t.g.hitImpulse(2));
+  assert.ok(t.g.hitImpulse(1) === t.g.hitImpulse(2));
+});
+
+test('серия попаданий по летящему вверх шару поднимает его до потолка', () => {
+  const t = loadGame();
+  let ball = new t.g.Circle(4, { x: 640, y: 450 }, 2, 'red');
+  ball.dy = 0;
+  let arr = [ball];
+  let minY = Infinity;
+  for (let hit = 0; hit < 3; hit++) { // три попадания подряд, пока осколок летит вверх
+    t.g.split(0, arr);
+    arr = [arr[0]];
+    for (let i = 0; i < 4; i++) { arr[0].update(1); minY = Math.min(minY, arr[0].y); }
+  }
+  for (let i = 0; i < 400; i++) { arr[0].update(1); minY = Math.min(minY, arr[0].y); }
+  assert.ok(minY - arr[0].r < 3, `дошёл до потолка: верх шара на ${minY - arr[0].r} px ниже`);
+});
+
+test('одно попадание с нижней точки не достаёт до потолка', () => {
+  const t = loadGame();
+  const b = new t.g.Circle(3, { x: 640, y: 600 }, 2, 'red');
+  b.dy = 5;
+  const arr = [b];
   t.g.split(0, arr);
-  assert.deepEqual(arr.map((b) => Math.abs(b.dx)), [2, 2]);
-  assert.equal(arr[0].dx, -arr[1].dx);
+  let minY = Infinity;
+  for (let i = 0; i < 400; i++) { arr[0].update(1); minY = Math.min(minY, arr[0].y); }
+  assert.ok(minY > 600 - t.g.HIT_RISE - 3 - 1e-6 && minY < 600 - t.g.HIT_RISE + 3);
 });
 
-test('split: неверный индекс ничего не делает', () => {
+test('осколки одного шара получают одинаковую вертикальную скорость', () => {
   const t = loadGame();
-  const arr = [new t.g.Circle(1, { x: 300, y: 300 }, 1, 'red')];
-  t.g.split(5, arr);
+  const b = new t.g.Circle(3, { x: 640, y: 300 }, 2, 'red');
+  b.dy = 3;
+  const arr = [b];
+  t.g.split(0, arr);
+  assert.equal(arr[0].dy, arr[1].dy);
+});
+
+test('касание игрока не подбрасывает шар и не делит его', () => {
+  const t = loadGame();
+  const p = new t.g.Player({ x: 500, y: 695 }, 0);
+  const b = new t.g.Circle(2, { x: 500, y: 680 }, 0, 'red');
+  b.dy = 4;
+  const arr = [b];
+  t.g.checkHit([p], arr, 1);
   assert.equal(arr.length, 1);
+  assert.equal(b.dy, 4);
+});
+
+test('попадание гарпуном в падающий шар: оба осколка летят вверх', () => {
+  const t = loadGame();
+  const p = t.g.players[0];
+  t.g.currentLevel.length = 0;
+  const ball = new t.g.Circle(2, { x: p.x, y: 300 }, 0, 'red');
+  ball.dy = 3;
+  t.g.currentLevel.push(ball);
+  t.press('Space'); t.ticks(1); t.release('Space');
+  for (let i = 0; i < 60 && t.g.currentLevel.length !== 2; i++) t.ticks(1);
+  assert.equal(t.g.currentLevel.length, 2);
+  assert.ok(t.g.currentLevel.every((b) => b.size === 1));
+  // в тот же шаг, когда попал гарпун, осколки получили импульс вверх
+  assert.ok(t.g.currentLevel.every((b) => Math.abs(b.dy + t.g.hitImpulse(1)) < 1e-9), t.g.currentLevel.map((b) => b.dy).join());
 });
 
 test('checkHit: гарпун попадает в шар и делит его', () => {
