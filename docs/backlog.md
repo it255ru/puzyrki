@@ -11,7 +11,7 @@
 | # | Важность | Задача | Статус |
 |---|----------|--------|--------|
 | 1 | high | [Шары не сбрасываются при перезапуске уровня](issues/issue-high-level-state-not-reset.md) | open |
-| 0a | high | [Первый уровень проходится дважды](issues/issue-high-first-level-played-twice.md) | open |
+| 0a | high | [Первый уровень проходится дважды](issues/issue-high-first-level-played-twice.md) | done |
 | 2 | high | [Управление зависит от раскладки (`e.key` вместо `e.code`)](issues/issue-high-keyboard-layout-dependent.md) | open |
 | 3 | medium | [Shift-символы (`_ + *`) стреляют за игрока 1](issues/issue-medium-shifted-keys-trigger-shoot.md) | open |
 | 4 | medium | [Залипание клавиш при потере фокуса](issues/issue-medium-stuck-keys.md) | open |
