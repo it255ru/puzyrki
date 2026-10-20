@@ -56,6 +56,21 @@ function hitImpulse(size) {
     return Math.sqrt(2 * weight * sizes[size].weightMod * HIT_RISE);
 }
 
+// ===== Очки =====
+// За каждое попадание гарпуном по шару: очки размера × множитель комбо.
+// Меньше шар — больше очков.
+const HIT_POINTS = [200, 150, 100, 70, 50, 30, 20];
+// Комбо — серия попаданий подряд без промаха; множитель равен длине серии, но не больше COMBO_MAX.
+// Промах (гарпун исчез, ни во что не попав) или потеря жизни обнуляют серию.
+const COMBO_MAX = 5;
+// Шар, лопнувший о шипы целиком, приносит полную стоимость всех своих осколков × SPIKE_BONUS.
+const SPIKE_BONUS = 1.5;
+const STORAGE_KEY = "puzyrki.highScore";
+const MAX_SCORE = 999999999;
+let highScore = 0;       // рекорд (сумма очков всех игроков), хранится в localStorage
+let recordAtStart = 0;   // рекорд на начало текущей игры
+let recordBeaten = false; // побит ли рекорд в этой игре
+
 // Предел вертикальной скорости после попаданий: из любой точки поля до потолка.
 function maxRiseSpeed(size) {
     return Math.sqrt(2 * weight * sizes[size].weightMod * c.h);
@@ -110,6 +125,8 @@ const MAX_LIVES = 3;
 // не потерять все жизни за одно касание.
 const INVULNERABLE_FRAMES = 120;
 const HUD_PLAYER_WIDTH = 230;   // ширина блока жизней одного игрока в HUD
+const HUD_SCORE_WIDTH = 260;    // ширина блока очков одного игрока в верхней строке HUD
+const HUD_TOP_Y = 62;           // верхняя строка HUD: ниже полосы шипов
 
 // Схемы управления. Клавиатура задаётся физическим кодом (KeyboardEvent.code
 // в нижнем регистре), поэтому не зависит от раскладки и Shift:
@@ -252,6 +269,7 @@ class Circle extends Enemy {
         this.r = thisSize.r;
         this.weightMod = thisSize.weightMod || 1;
         this.touchedCeiling = false;
+        this.owner = null;   // игрок, по чьему гарпуну шар (или его предок) был последний раз задет
     }
 
     draw(ctx) {
@@ -344,6 +362,8 @@ class Player extends Shape {
         this.out = false;        // потерял все жизни и выбыл из игры
         this.spawnX = position.x;
         this.control = "keyboard";   // "keyboard" | "mouse"
+        this.score = 0;
+        this.combo = 0;          // длина текущей серии попаданий
     }
 
     draw(ctx) {
@@ -494,8 +514,58 @@ function createBalls(def) {
 levels.forEach(validateLevel);
 
 // ========== index.js ==========
+// Полная стоимость шара: он сам и все осколки, если разбить их гарпуном по одному (комбо не учитывается).
+function subtreeValue(size) {
+    if (size < 0) return 0;
+    return HIT_POINTS[size] + 2 * subtreeValue(size - 1);
+}
+
+function comboMultiplier(combo) {
+    return Math.max(1, Math.min(combo, COMBO_MAX));
+}
+
+function totalScore() {
+    return players.reduce((sum, p) => sum + p.score, 0);
+}
+
+// ===== Рекорд в localStorage (хранилище может быть недоступно — тогда рекорд только в сессии) =====
+function loadHighScore() {
+    try {
+        const value = Number(window.localStorage.getItem(STORAGE_KEY));
+        return Number.isFinite(value) && value > 0 ? Math.min(Math.floor(value), MAX_SCORE) : 0;
+    } catch (e) {
+        return 0;
+    }
+}
+
+function saveHighScore(value) {
+    try {
+        window.localStorage.setItem(STORAGE_KEY, String(value));
+    } catch (e) {
+        // приватный режим, квота, запрет — игра продолжается без сохранения
+    }
+}
+
+function addScore(player, points) {
+    if (!player || !(points > 0)) return;
+    player.score = Math.min(player.score + points, MAX_SCORE);
+    const total = totalScore();
+    if (total > highScore) {
+        highScore = total;
+        if (recordAtStart > 0) recordBeaten = true;
+        saveHighScore(total);
+    }
+}
+
+// Попадание гарпуном игрока по шару: очки размера × множитель серии.
+function awardHit(player, ball) {
+    if (!player) return;
+    player.combo++;
+    addScore(player, HIT_POINTS[ball.size] * comboMultiplier(player.combo));
+}
+
 function checkHit(type, targetType, maxHits) {
-    const toSplit = new Set();
+    const toSplit = new Map();   // индекс цели → атакующий, который её разбил
     let hits = 0;
     for (const t1 of type) {
         const b1 = t1.bounds();
@@ -503,17 +573,21 @@ function checkHit(type, targetType, maxHits) {
             if (toSplit.has(i)) continue;
             const t2 = targetType[i];
             if (!t2.intersects(b1)) continue;
-            if (t1.popping) toSplit.add(i);
+            if (t1.popping) toSplit.set(i, t1);
             hits++;
             if (maxHits && hits >= maxHits) break;
         }
         if (maxHits && hits >= maxHits) break;
     }
-    [...toSplit].sort((a, b) => b - a).forEach(i => split(i, targetType));
+    [...toSplit.keys()].sort((a, b) => b - a).forEach((i) => {
+        const owner = toSplit.get(i).owner || null;
+        awardHit(owner, targetType[i]);
+        split(i, targetType, owner);
+    });
     return hits;
 }
 
-function split(index, array) {
+function split(index, array, owner = null) {
     const obj = array[index];
     if (!obj) return;
     array.splice(index, 1);
@@ -528,6 +602,7 @@ function split(index, array) {
             const x = Math.min(Math.max(obj.x + side * r * 0.5, r), c.w - r);
             const child = new obj.constructor(size, { x, y: obj.y }, side * dx, obj.color);
             child.dy = dy;
+            child.owner = owner || obj.owner;
             array.push(child);
         }
     }
@@ -585,6 +660,7 @@ function loadLevel(n) {
 // Шары и уровень не сбрасываются. Без жизней игрок выбывает; когда выбыли все — GAME OVER.
 function onPlayerHit(player) {
     player.lives--;
+    player.combo = 0;
     harpoons = harpoons.filter((h) => h.owner !== player);
     player.shots = player.modifiers.maxShots;
     player.cooldown = 0;
@@ -610,7 +686,11 @@ function restart() {
         p.lives = MAX_LIVES;
         p.invulnerable = 0;
         p.out = false;
+        p.score = 0;
+        p.combo = 0;
     }
+    recordAtStart = highScore;
+    recordBeaten = false;
     loadLevel(0);
     // Кнопка выстрела, которой запускали игру, ещё нажата — не стрелять сразу
     for (const p of players) p.cooldown = START_COOLDOWN;
@@ -641,6 +721,8 @@ function burstAtSpikes() {
         if (ball.y - ball.r <= SPIKE_HEIGHT || ball.touchedCeiling) {
             currentLevel.splice(i, 1);
             burst++;
+            // Бонус тому, по чьему гарпуну шар последний раз задет; шар без хозяина очков не приносит
+            addScore(ball.owner, Math.round(subtreeValue(ball.size) * SPIKE_BONUS));
         }
     }
     return burst;
@@ -689,6 +771,8 @@ function logic() {
         if (harpoon.hits >= harpoon.modifiers.maxHits || !alive) {
             harpoons.splice(i, 1);
             harpoon.owner.freeShot();
+            // Гарпун исчез, ни во что не попав — промах, серия прерывается
+            if (harpoon.hits === 0) harpoon.owner.combo = 0;
         }
     }
     // Осколки, родившиеся уже в зоне шипов, лопаются сразу
@@ -696,7 +780,7 @@ function logic() {
 }
 
 // ===== НОВОЕ: оверлеи рисуются КАЖДЫЙ кадр — поэтому не пропадают =====
-function drawOverlay(title, subtitle, titleColor) {
+function drawOverlay(title, subtitle, titleColor, extraLines = []) {
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     ctx.fillRect(0, 0, c.w, c.h);
 
@@ -708,7 +792,28 @@ function drawOverlay(title, subtitle, titleColor) {
     ctx.fillStyle = "#ddd";
     ctx.font = "28px sans-serif";
     ctx.fillText(subtitle, c.w / 2, c.h / 2 + 40);
+
+    extraLines.forEach((line, i) => {
+        ctx.fillStyle = line.color || "#ddd";
+        ctx.font = "26px sans-serif";
+        ctx.fillText(line.text, c.w / 2, c.h / 2 + 90 + i * 36);
+    });
     ctx.textAlign = "left";
+}
+
+// Итоги игры для экрана конца: очки игроков, рекорд
+function resultLines() {
+    const lines = [];
+    if (players.length === 1) {
+        lines.push({ text: `Счёт: ${players[0].score}` });
+    } else {
+        lines.push({ text: players.map((p) => `Игрок ${p.number + 1}: ${p.score}`).join("   ·   ") });
+        lines.push({ text: `Всего: ${totalScore()}` });
+    }
+    lines.push(recordBeaten
+        ? { text: `Новый рекорд: ${highScore}!`, color: "gold" }
+        : { text: `Рекорд: ${highScore}` });
+    return lines;
 }
 
 // Ряд шипов вдоль верха экрана (остриями вниз)
@@ -738,6 +843,20 @@ function drawHUD() {
         const hearts = p.out ? "✖" : "♥".repeat(Math.max(p.lives, 0));
         ctx.fillStyle = p.out ? "#888" : p.color;
         ctx.fillText(`Игрок ${p.number + 1}: ${hearts}`, c.w - 10 - (players.length - 1 - i) * HUD_PLAYER_WIDTH, c.h - 15);
+    }
+    // Верхняя строка (под шипами): очки игроков с комбо, всего при двух игроках, рекорд
+    ctx.textAlign = "left";
+    players.forEach((p, i) => {
+        const combo = p.combo >= 2 ? `  ×${comboMultiplier(p.combo)}` : "";
+        ctx.fillStyle = p.out ? "#888" : p.color;
+        ctx.fillText(`Игрок ${p.number + 1}: ${p.score}${combo}`, 10 + i * HUD_SCORE_WIDTH, HUD_TOP_Y);
+    });
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#eee";
+    ctx.fillText(`Рекорд: ${highScore}`, c.w - 10, HUD_TOP_Y);
+    if (players.length > 1) {
+        ctx.textAlign = "center";
+        ctx.fillText(`Всего: ${totalScore()}`, c.w / 2, HUD_TOP_Y);
     }
     ctx.textAlign = "left";
 }
@@ -772,9 +891,9 @@ function paint() {
 
     // Оверлеи — в самом конце, поверх всего, и каждый кадр
     if (gameState === "gameover") {
-        drawOverlay("GAME OVER", "Нажмите Enter, чтобы начать заново", "#e53935");
+        drawOverlay("GAME OVER", "Нажмите Enter, чтобы начать заново", "#e53935", resultLines());
     } else if (gameState === "win") {
-        drawOverlay("ПОБЕДА!", "Нажмите Enter, чтобы сыграть ещё раз", "gold");
+        drawOverlay("ПОБЕДА!", "Нажмите Enter, чтобы сыграть ещё раз", "gold", resultLines());
     } else if (pause) {
         if (mousePlayer() && !mouseLocked()) {
             drawOverlay("PAUSE", lockError ? "Не удалось захватить мышь — кликните ещё раз" : "Кликните, чтобы продолжить", "#bbb");
@@ -1200,6 +1319,7 @@ function resize() {
 resize();
 
 // ========== Запуск ==========
+highScore = loadHighScore();
 // Игра стартует с титульного экрана (gameState = "title"), игроки
 // создаются в startGame().
 window.requestAnimationFrame(loop);
