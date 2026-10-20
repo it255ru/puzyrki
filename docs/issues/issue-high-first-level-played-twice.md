@@ -2,7 +2,7 @@
 
 - **Важность:** high
 - **Тип:** bug (логика)
-- **Статус:** open
+- **Статус:** done (PR fix/first-level-played-twice)
 - **Где:** [index.html](../../index.html) — `logic()`, `levelCountdown`, `restart()`
 - **Найдено:** автотестами (`tests/05-game-flow.test.js`, todo)
 

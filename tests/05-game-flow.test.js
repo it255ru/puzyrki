@@ -74,7 +74,6 @@ test('R тоже перезапускает игру', () => {
 
 test('очистка уровня: пауза 90 кадров, затем следующий уровень', () => {
   const t = loadGame();
-  t.g.levelCountdown = -1; // состояние «уровень уже загружен» (см. todo ниже про старт)
   t.g.currentLevel.length = 0;
   t.ticks(1);
   assert.equal(t.g.level, 1);
@@ -102,7 +101,6 @@ test('очистка последнего уровня → ПОБЕДА; Enter �
 
 test('можно пройти все уровни подряд', () => {
   const t = loadGame();
-  t.g.levelCountdown = -1;
   for (let i = 0; i < t.g.levels.length; i++) {
     assert.equal(t.g.level, i);
     t.g.currentLevel.length = 0;
@@ -182,7 +180,7 @@ test('полный кадр отрисовки не падает во всех �
 
 // Известные дефекты.
 test('сразу после старта очистка уровня 1 ведёт на уровень 2, а не повторяет 1',
-  { todo: 'issue-high-first-level-played-twice' }, () => {
+  () => {
     const t = loadGame();
     t.g.currentLevel.length = 0;
     t.ticks(100);
@@ -190,7 +188,7 @@ test('сразу после старта очистка уровня 1 ведё�
   });
 
 test('после restart() очистка уровня 1 ведёт на уровень 2',
-  { todo: 'issue-high-first-level-played-twice' }, () => {
+  () => {
     const t = loadGame();
     t.g.restart();
     t.g.currentLevel.length = 0;
@@ -220,4 +218,13 @@ test('ошибка в логике не останавливает игрово�
     t.g.currentLevel.push({ update() { throw new Error('boom'); }, draw() {}, bounds() { return { x1: 0, x2: 0, y1: 0, y2: 0 }; }, intersects() { return false; } });
     try { t.frame(); } catch { /* ожидаемо до исправления */ }
     assert.equal(t.raf.length, 1);
+  });
+
+test('после перехода на следующий уровень очистка ведёт на следующий, а не повторяет',
+  () => {
+    const t = loadGame();
+    t.g.currentLevel.length = 0; t.ticks(100);
+    assert.equal(t.g.level, 1);
+    t.g.currentLevel.length = 0; t.ticks(100);
+    assert.equal(t.g.level, 2);
   });
