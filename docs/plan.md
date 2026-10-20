@@ -1,40 +1,34 @@
-# План исправления
+# План
 
-Правила: один этап — один набор изменений в `index.html`; после этапа обновить статус в [backlog.md](backlog.md) и запись в [changelog.md](changelog.md). Для проверки логики без браузера использовать вынесенный скрипт с заглушками DOM (как при ревью) либо ручной сценарий из issue.
+Каждый шаг — отдельная короткая ветка от `main` → правка → `npm test` и проверка всех функций → PR → зелёный CI → squash в `main`. После шага обновлять [backlog.md](backlog.md), [changelog.md](changelog.md) и снимать `todo` с исправленных тестов. Решения: [decisions.md](decisions.md).
 
-## Этап 0 — подготовка (выполнено)
-- Git (`main`, trunk-based), приватный репозиторий, `index.html`, `assets/`, `CLAUDE.md`.
-- `npm test` с харнессом и 60 тестами, CI ([#9b](issues/issue-medium-no-automated-tests-and-ci.md)). Известные баги закреплены тестами `todo`.
-- Осталось: ESLint ([#14](issues/issue-low-lint-and-structure.md)).
+## Сделано
+- Репозиторий, trunk-based, `index.html`, `assets/`, `CLAUDE.md`, CI, 60 тестов.
+- Репозиторий публичный, Pages включён: https://it255ru.github.io/puzyrki/
+- Решения по 13 вопросам приняты, заведены issue.
 
-## Этап 1 — критичные дефекты (high)
-0. **#0a Первый уровень дважды.** `levelCountdown = -1` при старте и в `restart()`; снять `todo` с двух тестов.
-1. **#1 Сброс уровня.** Хранить описания уровней, создавать шары в `loadLevel()`. Тест: позиции после `loadLevel` равны исходным после игры/потери жизни/рестарта.
-2. **#2 Раскладки.** Переход на `e.code`; обновить `controls` и `gameplay.md`. Проверка вручную: RU и US.
+## Очередь
 
-Критерий готовности: игра воспроизводимо проходима на русской раскладке; потеря жизни возвращает уровень в исходное состояние.
-
-## Этап 2 — ввод и игроки (medium, связанный блок)
-- **#9a Два игрока:** убрать игроков 3–4, ограничить hot-join, раскладка по [decisions.md п. 9](decisions.md).
-3. **#3 Shift-символы** и **#4 залипание** — закрываются в основном этапом 1 (`e.code`); добавить сброс `currentKeys` на `blur`/`visibilitychange`.
-4. **#8 Hot-join:** `positionPlayers()`, ограничение по состоянию, очистка гарпунов.
-
-## Этап 3 — игровой цикл и физика (medium)
-5. **#6 Фиксированный шаг** 60 Гц + интерполяция отрисовки, а вместе с ней **#6a плавность анимации** (отскок от пола и стен, деление, округление канваса). Сделать до балансировки уровней, иначе числа придётся пересматривать.
-6. **#7 Устойчивость цикла:** `try/catch` или ранний `requestAnimationFrame`, валидация `size`.
-7. **#5 Окружность вместо AABB** для гарпуна и игрока.
-
-## Этап 4 — вёрстка и UX (medium/low)
-8. **#9 Рамка канваса**, **#11 HUD/языки**, **#12 цвет шаров**, **#10 debug**, **#15 метаданные**.
-
-## Этап 5 — чистка (low)
-9. **#13 Мёртвый код**, **#14 остаток замечаний линтера**. Код остаётся одним файлом (решение владельца).
-
-## Этап 3.5 — дизайн механики (по решениям из [decisions.md](decisions.md))
-Подбрасывание, шипы, очки, жизни, новые уровни — после выбора вариантов и после этапа 3 (физика и фиксированный шаг).
-
-## Правило для каждого этапа
-Короткая ветка от `main` → правка → `npm test` и проверка всех функций → PR → зелёный CI → squash в `main`.
+| Шаг | Что | Issue |
+|-----|-----|-------|
+| 1 | Первый уровень проходится дважды | [high](issues/issue-high-first-level-played-twice.md) |
+| 2 | Уровни как данные + валидация (сброс шаров при перезапуске) | [high](issues/issue-high-level-state-not-reset.md), [F5, часть 1](issues/issue-medium-feat-level-data-and-campaign.md) |
+| 3 | Управление двух игроков: `e.code`, подключение, сброс на blur, цвета и метки, максимум 2 игрока | [F6](issues/issue-medium-feat-two-player-controls.md), [раскладка](issues/issue-high-keyboard-layout-dependent.md), [Shift](issues/issue-medium-shifted-keys-trigger-shoot.md), [залипание](issues/issue-medium-stuck-keys.md), [2 игрока](issues/issue-medium-limit-to-two-players.md), [hot-join](issues/issue-medium-hotjoin-issues.md), [F9](issues/issue-low-feat-player-colors-and-labels.md) |
+| 4 | Игровой цикл: фиксированный шаг + интерполяция, защита от исключений, рамка канваса | [частота кадров](issues/issue-medium-frame-rate-dependent.md), [цикл](issues/issue-medium-game-loop-crash-halts-game.md), [рамка](issues/issue-medium-canvas-border-overflow.md) |
+| 5 | Физика: отскок без потерь, стены, деление, круговые столкновения | [F1, часть 1](issues/issue-medium-feat-hit-impulse-physics.md), [плавность](issues/issue-medium-animation-jitter.md), [окружности](issues/issue-medium-aabb-circle-collision.md), [размер 6](issues/issue-low-biggest-ball-exits-top.md) |
+| 6 | Подбрасывание при попадании | [F1, часть 2](issues/issue-medium-feat-hit-impulse-physics.md) |
+| 7 | Шипы, лопание о шипы, прилипающий гарпун | [F2](issues/issue-medium-feat-spike-ceiling-sticky-harpoon.md) |
+| 8 | Раздельные жизни | [F4](issues/issue-medium-feat-per-player-lives.md) |
+| 9 | Очки, комбо, рекорд | [F3](issues/issue-medium-feat-scoring.md) |
+| 10 | Кампания 10–15 уровней, обучающие уровни, баланс | [F5, часть 2](issues/issue-medium-feat-level-data-and-campaign.md), [цвета уровня 5](issues/issue-low-level5-color-low-contrast.md) |
+| 11 | Playwright smoke-тест в CI | [F7](issues/issue-medium-feat-browser-smoke-test.md) |
+| 12 | Звук | [F8](issues/issue-low-feat-sound.md) |
+| 13 | Чистка: HUD, отладка, метаданные, мёртвый код, ESLint, лицензия/ассеты | [HUD](issues/issue-low-hud-overlaps-player.md), [debug](issues/issue-low-debug-speed-always-active.md), [метаданные](issues/issue-low-no-accessibility-meta.md), [мёртвый код](issues/issue-low-unused-controls-and-stubs.md), [линтинг](issues/issue-low-lint-and-structure.md), [F10](issues/issue-low-docs-license-and-assets-policy.md) |
 
 ## Порядок и зависимости
-`#2 → #3,#4` (общая основа — `e.code`); `#6 → #6a → любая балансировка`; `#0 → всё остальное` (линтер/тесты страхуют правки).
+- 1 и 2 первыми: небольшие и убирают ложные падения в тестах уровней.
+- 3 до 8: раздельные жизни и подключение второго игрока опираются на новую схему ввода.
+- 4 до 5–6: подбрасывание нельзя подбирать, пока шаг логики зависит от частоты кадров.
+- 5 → 6 → 7: шипы и правила лопания считаются от новой физики.
+- 10 (баланс) после 5–9; 11 (Playwright) можно раньше, лучше сразу после 4, чтобы страховать визуальные правки.
+- 12 независим, но требует экрана «Нажмите любую клавишу» из шага 3.
