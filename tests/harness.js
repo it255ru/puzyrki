@@ -10,14 +10,15 @@ const HTML = path.join(__dirname, '..', 'index.html');
 
 const LET_VARS = [
   'time', 'gameSpeed', 'level', 'debug', 'debugHeld', 'levelCountdown',
-  'currentKeys', 'harpoons', 'pause', 'pauseHeld', 'restartHeld', 'gameState', 'lives',
+  'currentKeys', 'harpoons', 'pause', 'pauseHeld', 'restartHeld', 'lastTimestamp', 'accumulator', 'renderAlpha', 'fatalError', 'gameState', 'lives',
   'invulnerableTimer', 'controls', 'playerColors', 'currentLevel', 'players', 'levels', 'titleBalls', 'prevKeys',
 ];
-const CONSTS = ['c', 'weight', 'sizes', 'MAX_LIVES', 'MAX_PLAYERS'];
+const CONSTS = ['c', 'weight', 'sizes', 'MAX_LIVES', 'MAX_PLAYERS', 'STEP_MS', 'MAX_FRAME_MS', 'CANVAS_BORDER'];
 const FUNCS = [
   'Shape', 'Harpoon', 'Enemy', 'Circle', 'Player', 'readInput', 'keyId', 'releaseAllKeys', 'checkHit', 'split', 'paused',
   'positionPlayers', 'startGame', 'updateTitle', 'drawTitle', 'loadLevel', 'onPlayerHit', 'restart', 'logic', 'paint', 'drawHUD',
-  'validateLevel', 'createBalls', 'drawOverlay', 'debugSpeed', 'debugToggle', 'hotJoin', 'step', 'resize',
+  'validateLevel', 'createBalls', 'drawOverlay', 'debugSpeed', 'debugToggle', 'hotJoin', 'savePrevAll', 'tick', 'advance',
+  'drawFatalError', 'recoverFromError', 'loop', 'resize',
 ];
 
 function extractScript() {
@@ -71,6 +72,7 @@ function loadGame({ width = 1280, height = 720, dpr = 1, title = false, players 
     api.players.forEach((p) => { p.cooldown = 0; });
   }
 
+  let now = 0;
   const key = (type, k, code) => {
     const e = { key: k, code: code || '', prevented: false, preventDefault() { this.prevented = true; } };
     (listeners[type] || []).forEach((fn) => fn(e));
@@ -92,8 +94,10 @@ function loadGame({ width = 1280, height = 720, dpr = 1, title = false, players 
     document,
     /** Выполнить N кадров логики без отрисовки. */
     ticks(n = 1) { for (let i = 0; i < n; i++) api.logic(); },
-    /** Выполнить один кадр step() (логика + отрисовка + планирование следующего). */
-    frame() { const fn = raf.shift(); fn(); },
+    /** Один кадр браузера: время растёт ровно на dtMs (по умолчанию 1/60 с = один шаг логики). */
+    frame(dtMs = api.STEP_MS) { now += dtMs; const fn = raf.shift(); fn(now); },
+    /** Время последнего кадра (мс). */
+    get now() { return now; },
     /** Тексты, нарисованные последним paint(). */
     texts() { return ctx.calls.filter((c) => c[0] === 'fillText').map((c) => c[1]); },
     clearCalls() { ctx.calls.length = 0; },

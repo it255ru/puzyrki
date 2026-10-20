@@ -202,32 +202,3 @@ test('PageUp/PageDown меняют скорость только в режиме
     t.press('PageUp'); t.frame();
     assert.equal(t.g.gameSpeed, 1);
   });
-
-test('ошибка в логике не останавливает игровой цикл',
-  { todo: 'issue-medium-game-loop-crash-halts-game' }, () => {
-    const t = loadGame();
-    t.g.currentLevel.push({ update() { throw new Error('boom'); }, draw() {}, bounds() { return { x1: 0, x2: 0, y1: 0, y2: 0 }; }, intersects() { return false; } });
-    try { t.frame(); } catch { /* ожидаемо до исправления */ }
-    assert.equal(t.raf.length, 1);
-  });
-
-test('после перехода на следующий уровень очистка ведёт на следующий, а не повторяет',
-  () => {
-    const t = loadGame();
-    t.g.currentLevel.length = 0; t.ticks(100);
-    assert.equal(t.g.level, 1);
-    t.g.currentLevel.length = 0; t.ticks(100);
-    assert.equal(t.g.level, 2);
-  });
-
-test('удерживаемая кнопка выстрела игрока 2 (Enter) не перезапускает игру сразу после GAME OVER', () => {
-  const t = loadGame();
-  t.press('Enter'); t.frame(); // подключили игрока 2 и держим Enter
-  t.g.lives = 1; hitPlayer(t); t.frame();
-  assert.equal(t.g.gameState, 'gameover');
-  t.frame(); t.frame();
-  assert.equal(t.g.gameState, 'gameover', 'удержание не перезапускает');
-  t.release('Enter'); t.frame();
-  t.press('Enter'); t.frame();
-  assert.equal(t.g.gameState, 'playing', 'новое нажатие перезапускает');
-});

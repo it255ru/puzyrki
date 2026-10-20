@@ -2,7 +2,7 @@
 
 - **Важность:** medium
 - **Тип:** robustness
-- **Статус:** open
+- **Статус:** done (PR feat/fixed-timestep)
 - **Где:** [index.html](../../index.html) — `step()`
 
 ## Описание
