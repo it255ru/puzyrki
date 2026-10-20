@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Bubble-Trubble</title>
+    <style type="text/css">
+        body {
+            margin: 0;
+            background: black;
+        }
+        div {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            border: 5px dashed gold;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <canvas id="canvas" height=720 width=1280>
+        </canvas>
+    </div>
+</body>
+<script type="text/javascript">
+// ========== vars.js ==========
+const c = {w: 1280, h: 720}
+const weight = 0.2;
+const sizes = [
+    { bs: 9,  r: 10, weightMod: 1 },
+    { bs: 11, r: 20, weightMod: 1 },
+    { bs: 13, r: 30, weightMod: 1 },
+    { bs: 14, r: 40, weightMod: 1 },
+    { bs: 15, r: 50, weightMod: 1 },
+    { bs: 12, r: 70, weightMod: 0.7 },
+    { bs: 9,  r: 80, weightMod: 0.4 },
+];
+let levels = [];
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let time = 0;
+let gameSpeed = 1;
+let level = 0;
+let debug = false;
+let debugHeld = false;
+let levelCountdown = 0;
+let joinTimer = 0;
+
+let currentKeys = {};
+
+let harpoons = [];
+
+let pause = false;
+let pauseHeld = false;
+
+// ===== НОВОЕ: состояние игры и жизни =====
+// "playing" | "gameover" | "win"
+let gameState = "playing";
+const MAX_LIVES = 3;
+let lives = MAX_LIVES;
+// Небольшая неуязвимость после потери жизни (в кадрах),
+// чтобы не потерять все жизни за одно касание.
+let invulnerableTimer = 0;
+
+let controls = {
+    players: [
+        {
+            "w": "up", "arrowup": "up",
+            "s": "down", "arrowdown": "down",
+            "a": "left", "arrowleft": "left",
+            "d": "right", "arrowright": "right",
+            " ": "shoot", "spacebar": "shoot", "shift": "shoot",
+        },
+        {
+            "i": "up",
+            "k": "down",
+            "j": "left",
+            "l": "right",
+            "-": "shoot",
+            "_": "shoot",
+        },
+        {
+            "8": "up",
+            "5": "down",
+            "4": "left",
+            "6": "right",
+            "+": "shoot",
+        },
+        {
+            "t": "up",
+            "g": "down",
+            "f": "left",
+            "h": "right",
+            "y": "shoot",
+        },
+    ],
+};
+
+let playerColors = [
+    "green",
+    "blue",
+    "orange",
+    "red",
+]
+
+let currentLevel = [];
+let players = [];
+
+// ========== classes.js ==========
+class Shape {
+    constructor(position, color) {
+        this.x = position.x;
+        this.y = position.y;
+        this.color = color || "#666";
+    }
+}
+
+class Harpoon extends Shape {
+    constructor(position, owner, color, modifiers) {
+        super(position, color);
+        this.h = 0;
+        this.hits = 0;
+        this.owner = owner;
+        this.popping = true;
+        this.modifiers = modifiers || {};
+        this.modifiers.speed = this.modifiers.speed || 12;
+        this.modifiers.maxHits = this.modifiers.maxHits || 1;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x - 1, this.y - this.h, 3, this.h);
+
+        ctx.beginPath();
+        ctx.moveTo(this.x - 2, this.y - this.h);
+        ctx.lineTo(this.x + 0.5, this.y - this.h - 15);
+        ctx.lineTo(this.x + 3, this.y - this.h);
+        ctx.fill();
+    }
+
+    bounds() {
+        return {
+            x1: this.x - 1,
+            x2: this.x + 2,
+            y1: this.y - this.h - 15,
+            y2: this.y,
+        };
+    }
+
+    update(speed) {
+        this.h += this.modifiers["speed"] * speed;
+        return this.y - this.h >= 15;
+    }
+}
+
+class Enemy extends Shape {
+    constructor(size, position, color) {
+        super(position, color);
+        this.size = size;
+    }
+    intersects(shape) {}
+}
+
+class Circle extends Enemy {
+    constructor(size, position, initialSpeed, color) {
+        super(size, position, color);
+        const thisSize = sizes[size];
+        this.dx = initialSpeed;
+        this.dy = -5;
+        this.r = thisSize.r;
+        this.bs = thisSize.bs;
+        this.weightMod = thisSize.weightMod || 1;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    bounds() {
+        return {
+            x1: this.x - this.r,
+            y1: this.y - this.r,
+            x2: this.x + this.r,
+            y2: this.y + this.r,
+        }
+    }
+
+    update(speed) {
+        this.x += this.dx * speed;
+        this.gravity(speed);
+        if (this.x > c.w - this.r || this.x < this.r) {
+            this.dx = -this.dx;
+            this.x += this.dx * speed;
+        }
+    }
+
+    intersects(bound) {
+        const b2 = this.bounds();
+        return !(b2.x2 < bound.x1 ||
+                b2.x1 > bound.x2 ||
+                b2.y2 < bound.y1 ||
+                b2.y1 > bound.y2);
+    }
+
+    gravity(speed) {
+        this.dy += weight * this.weightMod * speed;
+        this.y += this.dy * speed;
+        if (this.y > c.h - this.r) {
+            this.dy = -this.bs;
+            this.y += this.dy * speed;
+        }
+    }
+}
+
+class Player extends Shape {
+    constructor(position, playerNumber) {
+        super(position, playerColors[playerNumber]);
+        this.number = playerNumber;
+        this.cooldown = 0;
+        this.shooting = false;
+        this.modifiers = {
+            speed: 1,
+            maxShots: 1,
+            cooldown: 15,
+        };
+        this.shots = this.modifiers.maxShots;
+    }
+
+    draw(ctx) {
+        // Мигание во время неуязвимости
+        if (invulnerableTimer > 0 && Math.floor(time / 5) % 2 === 0) {
+            return;
+        }
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x - 15, this.y - 25, 30, 50);
+        ctx.strokeRect(this.x - 15, this.y - 25, 30, 50);
+    }
+
+    bounds() {
+        return {
+            x1: this.x - 15,
+            x2: this.x + 15,
+            y1: this.y - 25,
+            y2: this.y + 25,
+        }
+    }
+
+    update(speed) {
+        const {speed: speedMod} = this.modifiers;
+        const input = {};
+        for (const key in currentKeys) {
+            if (!currentKeys.hasOwnProperty(key) || !currentKeys[key]) {
+                continue;
+            }
+            const control = controls.players[this.number][key];
+            if (control) {
+                input[control] = true;
+            }
+        }
+        if (input["left"] && !input["right"]) {
+            this.x -= 5 * speed * speedMod;
+            if (this.x < 15) this.x = 15;
+        } else if (input["right"] && !input["left"]) {
+            this.x += 5 * speed * speedMod;
+            if (this.x > c.w - 15) this.x = c.w - 15;
+        }
+        this.cooldown -= 1 * speed;
+        if (this.cooldown <= 0 && input["shoot"] && this.shots > 0) {
+            this.shots--;
+            this.cooldown = this.modifiers.cooldown;
+            // ИСПРАВЛЕНО: передаём цвет игрока гарпуну
+            harpoons.push(new Harpoon({x: this.x, y: this.y + 25}, this, this.color));
+        }
+    }
+
+    freeShot() {
+        if (this.shots < this.modifiers.maxShots) {
+            this.shots++;
+        }
+    }
+}
+
+// ========== levels.js ==========
+levels = [
+    [
+        new Circle( 2, { x: c.w / 2, y: 200 }, 3, "#3f51b5"),
+    ],
+    [
+        new Circle( 2, { x: c.w / 3, y: 200 }, -3, "#2196f3"),
+        new Circle( 2, { x: c.w * 2 / 3, y: 200 }, 3, "#2196f3"),
+    ],
+    [
+        new Circle( 3, { x: c.w / 2, y: 200 }, 3, "#009688"),
+    ],
+    [
+        new Circle( 3, { x: c.w / 2, y: 200 }, 4, "#009688"),
+    ],
+    [
+        new Circle( 0, { x: 100, y: 500 }, 3 ),
+        new Circle( 1, { x: 200, y: 500 }, 3 ),
+        new Circle( 2, { x: 300, y: 500 }, 3 ),
+        new Circle( 1, { x: 400, y: 500 }, 3 ),
+        new Circle( 0, { x: 500, y: 500 }, 3 ),
+    ],
+];
+
+// ========== index.js ==========
+function checkHit(type, targetType, maxHits) {
+    const toSplit = new Set();
+    let hits = 0;
+    for (const t1 of type) {
+        const b1 = t1.bounds();
+        for (let i = 0; i < targetType.length; i++) {
+            if (toSplit.has(i)) continue;
+            const t2 = targetType[i];
+            if (!t2.intersects(b1)) continue;
+            if (t1.popping) toSplit.add(i);
+            hits++;
+            if (maxHits && hits >= maxHits) break;
+        }
+        if (maxHits && hits >= maxHits) break;
+    }
+    [...toSplit].sort((a, b) => b - a).forEach(i => split(i, targetType));
+    return hits;
+}
+
+function split(index, array) {
+    const obj = array[index];
+    if (!obj) return;
+    array.splice(index, 1);
+    const size = obj.size - 1;
+    if (size >= 0) {
+        const pos = { x: obj.x, y: obj.y };
+        const dx = obj.dx || (Math.random() > 0.5 ? 2 : -2);
+        array.push(
+            new obj.constructor(size, pos,  dx, obj.color),
+            new obj.constructor(size, pos, -dx, obj.color)
+        );
+    }
+}
+
+function paused() {
+    if (currentKeys["escape"] || currentKeys["p"]) {
+        if (!pauseHeld) pause = !pause;
+        pauseHeld = true;
+    } else {
+        pauseHeld = false;
+    }
+    return pause;
+}
+
+function printKeys(ctx) {
+    if (currentKeys) {
+        let message = "";
+        for (const key in currentKeys) {
+            if (currentKeys.hasOwnProperty(key) && currentKeys[key]) {
+                message += key + " ";
+            }
+        }
+        ctx.font = "24px sans-serif";
+        ctx.fillStyle = "#bbb";
+        ctx.fillText(message, 10, 30);
+    }
+}
+
+function positionPlayers() {
+    const number = players.length;
+    for (let i = 0; i < number; i++) {
+        const player = players[i];
+        player.y = c.h - 25;
+        player.x = c.w * (i + 1) / (number + 1);
+    }
+}
+
+// ===== НОВОЕ: загрузка уровня с КОПИЕЙ массива =====
+// Раньше было currentLevel = levels[level] — ссылка на исходный массив,
+// который split() портил через splice/push.
+function loadLevel(n) {
+    currentLevel = levels[n].slice();
+    harpoons = [];
+    for (const p of players) {
+        p.shots = p.modifiers.maxShots;
+        p.cooldown = 0;
+    }
+    positionPlayers();
+}
+
+// ===== НОВОЕ: обработка попадания в игрока =====
+function onPlayerHit() {
+    lives--;
+    if (lives <= 0) {
+        gameState = "gameover";
+        harpoons = [];
+    } else {
+        // Перезапускаем текущий уровень, даём неуязвимость
+        loadLevel(level);
+        invulnerableTimer = 120; // ~2 секунды
+    }
+}
+
+// ===== НОВОЕ: полный рестарт игры =====
+function restart() {
+    level = 0;
+    lives = MAX_LIVES;
+    levelCountdown = 0;
+    invulnerableTimer = 0;
+    pause = false;
+    loadLevel(0);
+    gameState = "playing";
+}
+
+function logic() {
+    if (invulnerableTimer > 0) {
+        invulnerableTimer -= gameSpeed;
+    }
+
+    if (currentLevel.length == 0) {
+        if (levelCountdown > 0) {
+            levelCountdown--;
+        } else if (levelCountdown === 0) {
+            levelCountdown = -1;
+            loadLevel(level);
+        } else if (level + 1 < levels.length) {
+            level++;
+            levelCountdown = 90;
+        } else {
+            // ИСПРАВЛЕНО: раньше после последнего уровня игра просто
+            // зависала на пустом экране. Теперь — победа.
+            gameState = "win";
+            return;
+        }
+    }
+
+    for (let enemy of currentLevel) {
+        enemy.update(gameSpeed);
+    }
+
+    for (let player of players) {
+        player.update(gameSpeed);
+        // ИСПРАВЛЕНО: вместо pause = true — система жизней.
+        // Неуязвимость защищает от повторного срабатывания.
+        if (invulnerableTimer <= 0 && checkHit([player], currentLevel, 1)) {
+            onPlayerHit();
+            if (gameState !== "playing") return;
+        }
+    }
+
+    for (let i = harpoons.length - 1; i >= 0; i--) {
+        const harpoon = harpoons[i];
+        const hitStatic = harpoon.update(gameSpeed);
+        harpoon.hits += checkHit([harpoon], currentLevel, harpoon.modifiers.maxHits);
+        if (harpoon.hits >= harpoon.modifiers.maxHits || !hitStatic) {
+            harpoons.splice(i, 1);
+            harpoon.owner.freeShot();
+        }
+    }
+}
+
+// ===== НОВОЕ: оверлеи рисуются КАЖДЫЙ кадр — поэтому не пропадают =====
+function drawOverlay(title, subtitle, titleColor) {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(0, 0, c.w, c.h);
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = titleColor;
+    ctx.font = "72px sans-serif";
+    ctx.fillText(title, c.w / 2, c.h / 2 - 20);
+
+    ctx.fillStyle = "#ddd";
+    ctx.font = "28px sans-serif";
+    ctx.fillText(subtitle, c.w / 2, c.h / 2 + 40);
+    ctx.textAlign = "left";
+}
+
+function drawHUD() {
+    ctx.font = "24px sans-serif";
+    ctx.fillStyle = "#eee";
+    ctx.textAlign = "left";
+    ctx.fillText(`Уровень: ${level + 1}/${levels.length}`, 10, c.h - 15);
+    ctx.textAlign = "right";
+    ctx.fillText(`Жизни: ${"♥".repeat(Math.max(lives, 0))}`, c.w - 10, c.h - 15);
+    ctx.textAlign = "left";
+}
+
+function paint() {
+    ctx.fillStyle = "#444";
+    ctx.strokeStyle = "#888";
+    ctx.fillRect(0, 0, c.w, c.h);
+
+    for (const harpoon of harpoons) {
+        harpoon.draw(ctx);
+    }
+
+    for (let enemy of currentLevel) {
+        enemy.draw(ctx);
+    }
+
+    for (let player of players) {
+        player.draw(ctx);
+    }
+
+    drawHUD();
+
+    // Оверлеи — в самом конце, поверх всего, и каждый кадр
+    if (gameState === "gameover") {
+        drawOverlay("GAME OVER", "Нажмите Enter, чтобы начать заново", "#e53935");
+    } else if (gameState === "win") {
+        drawOverlay("ПОБЕДА!", "Нажмите Enter, чтобы сыграть ещё раз", "gold");
+    } else if (pause) {
+        drawOverlay("PAUSE", "ESC / P — продолжить", "#bbb");
+    }
+
+    if (debug) {
+        printKeys(ctx);
+    }
+}
+
+function debugSpeed() {
+    if (currentKeys["pageup"] && gameSpeed < 3) {
+        gameSpeed += 0.01;
+    } else if (currentKeys["pagedown"] && gameSpeed > 0.1) {
+        gameSpeed -= 0.01;
+    }
+}
+
+function debugToggle() {
+    if (currentKeys["f2"]) {
+        if (!debugHeld) debug = !debug;
+        debugHeld = true;
+    } else {
+        debugHeld = false;
+    }
+}
+
+function hotJoin() {
+    if (time > joinTimer + 30) {
+        if (currentKeys["/"] && players.length > 1) {
+            players.pop();
+            joinTimer = time;
+        } else if (currentKeys["*"] && players.length < 4) {
+            players.push(new Player({x: c.w / 2, y: c.h - 25}, players.length));
+            joinTimer = time;
+        }
+    }
+}
+
+function step() {
+    // ИСПРАВЛЕНО: явный автомат состояний вместо pause = true
+    if (gameState === "gameover" || gameState === "win") {
+        // Ждём Enter/R для рестарта; логика не крутится,
+        // но paint() ниже отрисовывает оверлей каждый кадр.
+        if (currentKeys["enter"] || currentKeys["r"]) {
+            restart();
+        }
+    } else if (!paused()) {
+        logic();
+    }
+
+    paint();
+    debugSpeed();
+    debugToggle();
+    hotJoin();
+
+    time++;
+    window.requestAnimationFrame(step);
+}
+
+// ========== listeners.js ==========
+document.addEventListener("keydown", (e) => {
+    const k = (e.key || "").toLowerCase();
+    if (k === " " || k === "arrowup" || k === "arrowdown" ||
+        k === "arrowleft" || k === "arrowright") {
+        e.preventDefault();
+    }
+    currentKeys[k] = true;
+    if (e.code) {
+        const code = e.code.toLowerCase();
+        currentKeys[code] = true;
+        if (code === "space") currentKeys[" "] = true;
+        if (code === "shiftleft" || code === "shiftright") currentKeys["shift"] = true;
+    }
+    return false;
+});
+
+document.addEventListener("keyup", (e) => {
+    const k = (e.key || "").toLowerCase();
+    if (k === " " || k === "arrowup" || k === "arrowdown" ||
+        k === "arrowleft" || k === "arrowright") {
+        e.preventDefault();
+    }
+    currentKeys[k] = false;
+    if (e.code) {
+        const code = e.code.toLowerCase();
+        currentKeys[code] = false;
+        if (code === "space") currentKeys[" "] = false;
+        if (code === "shiftleft" || code === "shiftright") currentKeys["shift"] = false;
+    }
+    return false;
+});
+
+window.addEventListener("resize", resize);
+
+// ИСПРАВЛЕНО: простой и предсказуемый расчёт масштаба
+function resize() {
+    const pixelRatio = window.devicePixelRatio || 1;
+    const availW = window.innerWidth;
+    const availH = window.innerHeight;
+
+    const rescale = Math.min(availW / c.w, availH / c.h, 1.25);
+
+    canvas.width = c.w * rescale * pixelRatio;
+    canvas.height = c.h * rescale * pixelRatio;
+
+    canvas.style.width = `${c.w * rescale}px`;
+    canvas.style.height = `${c.h * rescale}px`;
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.setTransform(rescale * pixelRatio, 0, 0, rescale * pixelRatio, 0, 0);
+}
+
+resize();
+
+// ========== Создание игроков ==========
+players.push(new Player({x: c.w / 2, y: c.h - 25}, 0));
+
+// ========== Запуск ==========
+loadLevel(0);
+window.requestAnimationFrame(step);
+</script>
+</html>
