@@ -71,6 +71,7 @@ const COMBO_MAX = 5;
 const SPIKE_BONUS = 1.5;
 const STORAGE_KEY = "puzyrki.highScore";
 const MAX_SCORE = 999999999;
+let burstCount = 0;      // сколько шаров лопнуло о шипы в текущей игре (для статистики и тестов)
 let highScore = 0;       // рекорд (сумма очков всех игроков), хранится в localStorage
 let recordAtStart = 0;   // рекорд на начало текущей игры
 let recordBeaten = false; // побит ли рекорд в этой игре
@@ -456,31 +457,74 @@ function readInput(scheme) {
 // ========== levels.js ==========
 // Уровни — данные: { balls: [{ size, x, y, dx, color? }], spikes?: boolean }.
 // Объекты Circle создаются заново при каждой загрузке (см. loadLevel).
+// Кампания: 12 уровней. Первые три — обучающие (стрельба, подбрасывание, шипы),
+// дальше больше и крупнее шары, шипы то есть, то нет.
 levels = [
-    { balls: [
-        { size: 2, x: c.w / 2, y: 200, dx: 3, color: "#e91e63" },
+    { name: "Первый выстрел",
+      hint: "{shoot} — выстрел. Гарпун делит шар на два поменьше. Разбейте все шары!",
+      balls: [
+        { size: 2, x: 640, y: 250, dx: 2, color: "#e91e63" },
     ] },
-    { spikes: true, balls: [
-        { size: 2, x: c.w / 3, y: 200, dx: -3, color: "#9c27b0" },
-        { size: 2, x: c.w * 2 / 3, y: 200, dx: 3, color: "#9c27b0" },
+    { name: "Подбрасывание",
+      hint: "Попадание подбрасывает осколки вверх. Бейте по осколку ещё раз, пока он летит вверх, — подъём складывается.",
+      balls: [
+        { size: 3, x: 300, y: 200, dx: 2, color: "#9c27b0" },
     ] },
-    { spikes: true, balls: [
-        { size: 3, x: c.w / 2, y: 200, dx: 3, color: "#009688" },
+    { name: "Шипы", spikes: true,
+      hint: "Вверху шипы: шар, долетевший до них, лопается целиком и приносит бонус. Подбросьте шар серией попаданий.",
+      balls: [
+        { size: 3, x: 640, y: 220, dx: 2, color: "#009688" },
     ] },
-    { spikes: true, balls: [
-        { size: 3, x: c.w / 2, y: 200, dx: 4, color: "#009688" },
+    { name: "Двое", spikes: true, balls: [
+        { size: 2, x: 320, y: 250, dx: 2, color: "#ffc107" },
+        { size: 2, x: 960, y: 250, dx: -2, color: "#ffc107" },
     ] },
-    { spikes: true, balls: [
-        { size: 0, x: 100, y: 500, dx: 3 },
-        { size: 1, x: 200, y: 500, dx: 3 },
-        { size: 2, x: 300, y: 500, dx: 3 },
-        { size: 1, x: 400, y: 500, dx: 3 },
-        { size: 0, x: 500, y: 500, dx: 3 },
+    { name: "Трио", spikes: true, balls: [
+        { size: 2, x: 200, y: 300, dx: 3, color: "#ff5722" },
+        { size: 2, x: 640, y: 300, dx: -3, color: "#ff5722" },
+        { size: 2, x: 1080, y: 300, dx: 3, color: "#ff5722" },
+    ] },
+    { name: "Большой шар", balls: [
+        { size: 4, x: 640, y: 200, dx: 3, color: "#8bc34a" },
+    ] },
+    { name: "Разные размеры", balls: [
+        { size: 3, x: 300, y: 220, dx: 2, color: "#e91e63" },
+        { size: 2, x: 700, y: 320, dx: -3, color: "#e91e63" },
+        { size: 2, x: 900, y: 320, dx: 3, color: "#e91e63" },
+    ] },
+    { name: "Навстречу", spikes: true, balls: [
+        { size: 3, x: 250, y: 220, dx: 3, color: "#9c27b0" },
+        { size: 3, x: 1030, y: 220, dx: -3, color: "#9c27b0" },
+    ] },
+    { name: "Квартет", balls: [
+        { size: 2, x: 200, y: 260, dx: 3, color: "#ffc107" },
+        { size: 2, x: 480, y: 260, dx: -3, color: "#ffc107" },
+        { size: 2, x: 800, y: 260, dx: 3, color: "#ffc107" },
+        { size: 2, x: 1080, y: 260, dx: -3, color: "#ffc107" },
+    ] },
+    { name: "Смешанный строй", spikes: true, balls: [
+        { size: 4, x: 640, y: 220, dx: 2, color: "#8bc34a" },
+        { size: 2, x: 200, y: 300, dx: 3, color: "#ff5722" },
+        { size: 2, x: 1080, y: 300, dx: -3, color: "#ff5722" },
+    ] },
+    { name: "Тяжеловес", spikes: true, balls: [
+        { size: 5, x: 640, y: 400, dx: 2, color: "#009688" },
+    ] },
+    { name: "Финал", spikes: true, balls: [
+        { size: 6, x: 640, y: 300, dx: 2, color: "#e91e63" },
+        { size: 3, x: 200, y: 260, dx: 3, color: "#9c27b0" },
+        { size: 3, x: 1080, y: 260, dx: -3, color: "#9c27b0" },
     ] },
 ];
 
 // Высота зоны игрока снизу: шар не должен стартовать над головой игрока.
 const PLAYER_ZONE = 50;
+const SPIKE_MARGIN = 30;      // запас до шипов у шара в верхней точке стартового прыжка
+const MAX_HINT_LENGTH = 160;
+// Показ названия и подсказки уровня после загрузки (в шагах)
+const INTRO_FRAMES = 120;
+const INTRO_HINT_FRAMES = 360;
+let introTimer = 0;
 
 // Проверка данных уровня; бросает Error с номером уровня и шара.
 function validateLevel(def, index) {
@@ -490,6 +534,12 @@ function validateLevel(def, index) {
     }
     if (def.spikes !== undefined && typeof def.spikes !== "boolean") {
         throw new Error(`уровень ${index + 1}: spikes должен быть true или false`);
+    }
+    if (def.name !== undefined && (typeof def.name !== "string" || def.name.length === 0 || def.name.length > 40)) {
+        throw new Error(`уровень ${index + 1}: name должен быть строкой до 40 символов`);
+    }
+    if (def.hint !== undefined && (typeof def.hint !== "string" || def.hint.length === 0 || def.hint.length > MAX_HINT_LENGTH)) {
+        throw new Error(`уровень ${index + 1}: hint должен быть строкой до ${MAX_HINT_LENGTH} символов`);
     }
     def.balls.forEach((b, i) => {
         if (!Number.isInteger(b.size) || b.size < 0 || b.size >= sizes.length) {
@@ -507,6 +557,14 @@ function validateLevel(def, index) {
         }
         if (b.color !== undefined && typeof b.color !== "string") {
             throw new Error(`${where(i)}: color должен быть строкой`);
+        }
+        // Шар не должен лопнуть о шипы сам, без попаданий: высота подъёма из стартовой скорости
+        if (def.spikes) {
+            const g = weight * sizes[b.size].weightMod;
+            const apexTop = b.y - INITIAL_DY * INITIAL_DY / (2 * g) - r;
+            if (apexTop <= SPIKE_HEIGHT + SPIKE_MARGIN) {
+                throw new Error(`${where(i)}: шар поднимется до шипов сам (верх ${Math.round(apexTop)}, нужно выше ${SPIKE_HEIGHT + SPIKE_MARGIN})`);
+            }
         }
     });
 }
@@ -652,6 +710,7 @@ function positionPlayers() {
 function loadLevel(n) {
     currentLevel = createBalls(levels[n]);
     currentSpikes = !!levels[n].spikes;
+    introTimer = levels[n].hint ? INTRO_HINT_FRAMES : INTRO_FRAMES;
     harpoons = [];
     for (const p of players) {
         p.shots = p.modifiers.maxShots;
@@ -695,6 +754,7 @@ function restart() {
     }
     recordAtStart = highScore;
     recordBeaten = false;
+    burstCount = 0;
     loadLevel(0);
     // Кнопка выстрела, которой запускали игру, ещё нажата — не стрелять сразу
     for (const p of players) p.cooldown = START_COOLDOWN;
@@ -725,6 +785,7 @@ function burstAtSpikes() {
         if (ball.y - ball.r <= SPIKE_HEIGHT || ball.touchedCeiling) {
             currentLevel.splice(i, 1);
             burst++;
+            burstCount++;
             // Бонус тому, по чьему гарпуну шар последний раз задет; шар без хозяина очков не приносит
             addScore(ball.owner, Math.round(subtreeValue(ball.size) * SPIKE_BONUS));
         }
@@ -733,6 +794,8 @@ function burstAtSpikes() {
 }
 
 function logic() {
+    if (introTimer > 0) introTimer -= gameSpeed;
+
     if (currentLevel.length == 0) {
         if (levelCountdown > 0) {
             levelCountdown--;
@@ -820,6 +883,53 @@ function resultLines() {
     return lines;
 }
 
+// Подсказка про выстрел под схему управления игроков: клавиатура — «↑», мышь — «левая кнопка мыши»
+function shootHint() {
+    const names = [];
+    for (const p of players) {
+        const name = p.control === "mouse" ? "левая кнопка мыши" : "↑";
+        if (!names.includes(name)) names.push(name);
+    }
+    return names.length ? names.join(" / ") : "↑";
+}
+
+// Перенос текста по словам, не длиннее maxChars знаков в строке
+function wrapText(text, maxChars) {
+    const lines = [];
+    let line = "";
+    for (const word of text.split(" ")) {
+        if (line && (line + " " + word).length > maxChars) {
+            lines.push(line);
+            line = word;
+        } else {
+            line = line ? line + " " + word : word;
+        }
+    }
+    if (line) lines.push(line);
+    return lines;
+}
+
+// Название и подсказка уровня после загрузки; плавно гаснут в конце
+function drawIntro() {
+    if (gameState !== "playing" || introTimer <= 0 || !levels[level]) return;
+    const def = levels[level];
+    const lines = def.hint ? wrapText(def.hint.replace("{shoot}", shootHint()), 70) : [];
+    const height = 60 + lines.length * 32;
+    const alpha = Math.min(1, introTimer / 40);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+    ctx.fillRect(c.w / 2 - 520, 100, 1040, height);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "gold";
+    ctx.font = "bold 30px sans-serif";
+    ctx.fillText(`Уровень ${level + 1}${def.name ? ": " + def.name : ""}`, c.w / 2, 140);
+    ctx.fillStyle = "#fff";
+    ctx.font = "24px sans-serif";
+    lines.forEach((line, i) => ctx.fillText(line, c.w / 2, 180 + i * 32));
+    ctx.textAlign = "left";
+    ctx.globalAlpha = 1;
+}
+
 // Ряд шипов вдоль верха экрана (остриями вниз)
 function drawSpikes() {
     ctx.fillStyle = "#cfd8dc";
@@ -892,6 +1002,7 @@ function paint() {
     }
 
     drawHUD();
+    drawIntro();
 
     // Оверлеи — в самом конце, поверх всего, и каждый кадр
     if (gameState === "gameover") {

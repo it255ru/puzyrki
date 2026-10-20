@@ -13,9 +13,9 @@ test('игра стартует: playing, уровень 1, 3 жизни, оди
   assert.equal(t.raf.length, 1);
 });
 
-test('определено 5 уровней, у каждого есть шары допустимых размеров', () => {
+test('в кампании от 10 до 15 уровней, у каждого есть шары допустимых размеров', () => {
   const t = loadGame();
-  assert.equal(t.g.levels.length, 5);
+  assert.ok(t.g.levels.length >= 10 && t.g.levels.length <= 15, `уровней: ${t.g.levels.length}`);
   t.g.levels.forEach((lvl, i) => {
     assert.ok(lvl.balls.length > 0);
     assert.doesNotThrow(() => t.g.validateLevel(lvl, i));

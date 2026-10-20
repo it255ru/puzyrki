@@ -317,7 +317,7 @@ test('HUD показывает уровень и жизни', () => {
   t.clearCalls();
   t.frame();
   const texts = t.texts();
-  assert.ok(texts.some((s) => s.startsWith('Уровень: 1/5')));
+  assert.ok(texts.some((s) => s.startsWith(`Уровень: 1/${t.g.levels.length}`)));
   assert.ok(texts.includes('Игрок 1: ♥♥♥'));
 });
 

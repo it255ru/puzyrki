@@ -19,15 +19,15 @@ function ball(t, size, x, y, dx = 0, dy = 0) {
 
 // ===== Данные уровней =====
 
-test('шипы задаются в данных уровня; первый уровень без шипов, остальные с шипами', () => {
+test('шипы задаются в данных уровня: первые два уровня без шипов, шипы вводит третий', () => {
   const t = loadGame();
-  assert.equal(t.g.levels[0].spikes, undefined);
+  assert.deepEqual(t.g.levels.slice(0, 3).map((l) => !!l.spikes), [false, false, true]);
   assert.equal(t.g.currentSpikes, false);
-  for (let i = 1; i < t.g.levels.length; i++) assert.equal(t.g.levels[i].spikes, true);
-  t.g.loadLevel(1);
+  t.g.loadLevel(2);
   assert.equal(t.g.currentSpikes, true);
   t.g.loadLevel(0);
   assert.equal(t.g.currentSpikes, false);
+  assert.ok(t.g.levels.some((l) => l.spikes) && t.g.levels.some((l) => !l.spikes), 'встречаются оба вида');
 });
 
 test('validateLevel: spikes должен быть логическим', () => {
@@ -167,15 +167,15 @@ test('серия попаданий поднимает шар до шипов, �
 
 test('уровень, очищенный шипами, засчитывается как пройденный', () => {
   const t = loadGame();
-  t.g.level = 1;
-  t.g.loadLevel(1);
+  t.g.level = 2;
+  t.g.loadLevel(2);
   t.g.levelCountdown = -1;
   t.g.currentLevel.length = 0;
   ball(t, 1, 640, 60, 0, -10);
   t.ticks(3);
   assert.equal(t.g.currentLevel.length, 0);
   t.ticks(2);
-  assert.equal(t.g.level, 2);
+  assert.equal(t.g.level, 3);
   assert.equal(t.g.levelCountdown > 0, true);
 });
 

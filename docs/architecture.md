@@ -4,7 +4,7 @@
 
 ## Уровни
 
-`levels` — массив описаний `{ balls: [{ size, x, y, dx, color? }] }`. `validateLevel` проверяет их при загрузке скрипта, `createBalls` создаёт `Circle`, `loadLevel(n)` вызывает её при каждой загрузке — поэтому изменение шаров в игре не влияет на данные.
+`levels` — массив описаний `{ name, hint?, spikes?, balls: [{ size, x, y, dx, color }] }`. `validateLevel` проверяет их при загрузке скрипта, `createBalls` создаёт `Circle`, `loadLevel(n)` вызывает её при каждой загрузке — поэтому изменение шаров в игре не влияет на данные.
 
 ## Игровой цикл
 
@@ -63,6 +63,10 @@ Shape(position, color)          x, y, color
 
 `checkHit(attackers, targets, maxHits)` — AABB-проверка `target.intersects(attacker.bounds())`. Если у атакующего `popping === true` (гарпун), цели помечаются на `split()`. Индексы удаляются от большего к меньшему, чтобы `splice` не сбивал порядок. Для игрока `popping` не задан, поэтому шар не разбивается.
 
+
+## Баннер уровня
+
+`loadLevel` запускает `introTimer` (`INTRO_HINT_FRAMES` для уровня с подсказкой, иначе `INTRO_FRAMES`); `logic()` уменьшает его, пока игра идёт. `drawIntro()` рисует название и подсказку (`wrapText`, `shootHint` подставляет кнопку выстрела под схемы управления игроков) поверх игры, плавно гася в конце.
 
 ## Метка версии
 
