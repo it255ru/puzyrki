@@ -44,9 +44,22 @@ const sizes = [
 ];
 // Начальная вертикальная скорость шара (вверх), px за шаг.
 const INITIAL_DY = -5;
-// Осколки подпрыгивают не слабее этой скорости вверх (временная замена
-// импульса от попадания, см. issue про подбрасывание).
-const SPLIT_KICK = 6;
+// Попадание гарпуном подбрасывает шар: осколки получают вертикальный импульс
+// вверх, достаточный, чтобы подняться на HIT_RISE пикселей над точкой попадания
+// (у шаров с разной «плавучестью» weightMod импульс разный, а высота — одна).
+// Если шар уже летел вверх, импульсы складываются, и серия точных попаданий
+// поднимает его до потолка.
+const HIT_RISE = 100;
+
+// Импульс (px за шаг, вверх) для шара данного размера.
+function hitImpulse(size) {
+    return Math.sqrt(2 * weight * sizes[size].weightMod * HIT_RISE);
+}
+
+// Предел вертикальной скорости после попаданий: из любой точки поля до потолка.
+function maxRiseSpeed(size) {
+    return Math.sqrt(2 * weight * sizes[size].weightMod * c.h);
+}
 let levels = [];
 
 const canvas = document.getElementById("canvas");
@@ -441,9 +454,9 @@ function split(index, array) {
     if (size >= 0) {
         const dx = obj.dx || (Math.random() > 0.5 ? 2 : -2);
         const r = sizes[size].r;
-        // Осколки расходятся в стороны и наследуют вертикальную скорость родителя,
-        // но подпрыгивают не слабее SPLIT_KICK.
-        const dy = Math.min(obj.dy || 0, -SPLIT_KICK);
+        // Осколки расходятся в стороны. Падение гасится, подъём сохраняется,
+        // сверху добавляется импульс попадания (с ограничением по скорости).
+        const dy = Math.max(Math.min(obj.dy || 0, 0) - hitImpulse(size), -maxRiseSpeed(size));
         for (const side of [1, -1]) {
             const x = Math.min(Math.max(obj.x + side * r * 0.5, r), c.w - r);
             const child = new obj.constructor(size, { x, y: obj.y }, side * dx, obj.color);
