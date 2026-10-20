@@ -21,7 +21,7 @@
 | 7 | medium | [Исключение останавливает игровой цикл](issues/issue-medium-game-loop-crash-halts-game.md) | done |
 | 8 | medium | [Горячее подключение: наложение, пауза, game over](issues/issue-medium-hotjoin-issues.md) | done |
 | 9 | medium | [Рамка канваса вызывает прокрутку](issues/issue-medium-canvas-border-overflow.md) | done |
-| 9c | medium | [Рестарт Enter добавляет второго игрока в одиночной игре](issues/issue-medium-restart-with-enter-adds-second-player.md) | open |
+| 9c | medium | [Рестарт Enter добавляет второго игрока в одиночной игре](issues/issue-medium-restart-with-enter-adds-second-player.md) | done |
 | 9a | medium | [Ограничить игру двумя игроками](issues/issue-medium-limit-to-two-players.md) | done |
 | 9b | medium | [Автотесты и CI](issues/issue-medium-no-automated-tests-and-ci.md) | in progress |
 | 10 | low | [Debug-скорость всегда активна](issues/issue-low-debug-speed-always-active.md) | open |
@@ -45,7 +45,7 @@
 | F7 | medium | [Playwright smoke-тест в CI](issues/issue-medium-feat-browser-smoke-test.md) | open |
 | F8 | low | [Звук](issues/issue-low-feat-sound.md) | open |
 | F9 | low | [Цвета и метки игроков](issues/issue-low-feat-player-colors-and-labels.md) | done |
-| F11 | high | [Новое управление: стрелки + мышь, меню выбора](issues/issue-high-feat-new-controls-arrows-and-mouse.md) | open |
+| F11 | high | [Новое управление: стрелки + мышь, меню выбора](issues/issue-high-feat-new-controls-arrows-and-mouse.md) | done |
 | F10 | low | [Лицензия и политика ассетов](issues/issue-low-docs-license-and-assets-policy.md) | open |
 
 ## Идеи (без решения)

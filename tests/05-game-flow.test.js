@@ -20,7 +20,7 @@ test('касание шара: −1 жизнь у задетого, неуязв
   const t = loadGame();
   const p = t.g.players[0];
   const ballsBefore = t.g.currentLevel.slice();
-  t.press('KeyD'); t.ticks(20); t.release('KeyD'); // отошли от старта
+  t.press('ArrowRight'); t.ticks(20); t.release('ArrowRight'); // отошли от старта
   assert.ok(p.x > p.spawnX);
   addBallOn(t);
   t.ticks(1);
@@ -37,7 +37,7 @@ test('касание шара: −1 жизнь у задетого, неуязв
 test('при потере жизни снимаются гарпуны игрока и возвращается выстрел', () => {
   const t = loadGame();
   const p = t.g.players[0];
-  t.press('Space'); t.ticks(1); t.release('Space');
+  t.press('ArrowUp'); t.ticks(1); t.release('ArrowUp');
   assert.equal(t.g.harpoons.length, 1);
   assert.equal(p.shots, 0);
   addBallOn(t);
@@ -144,7 +144,7 @@ test('два игрока: выбывший не рисуется, не двиг
   assert.equal(t.g.gameState, 'playing', 'второй продолжает');
   const x = p1.x;
   t.g.currentLevel.length = 0; t.g.currentLevel.push(new t.g.Circle(2, { x: 640, y: 200 }, 0, 'red'));
-  t.press('KeyD'); t.press('Space'); t.ticks(20);
+  t.press('ArrowRight'); t.press('ArrowUp'); t.ticks(20);
   assert.equal(p1.x, x);
   assert.equal(t.g.harpoons.filter((h) => h.owner === p1).length, 0);
   t.clearCalls(); t.g.paint();
@@ -237,15 +237,6 @@ test('HUD: блоки жизней не накладываются и помещ
   assert.equal(xs.length, 2);
   assert.ok(Math.abs(xs[0] - xs[1]) >= t.g.HUD_PLAYER_WIDTH);
   assert.ok(xs.every((x) => x <= t.g.c.w));
-});
-
-test('подключившийся во время игры получает полные жизни и неуязвимость', () => {
-  const t = loadGame();
-  t.press('Enter'); t.frame();
-  const p2 = t.g.players[1];
-  assert.equal(p2.lives, t.g.MAX_LIVES);
-  assert.ok(p2.invulnerable > 0);
-  assert.equal(p2.spawnX, p2.x);
 });
 
 test('игрок возвращается на свою точку старта после потери жизни (не в центр)', () => {
@@ -396,27 +387,27 @@ test('PageUp/PageDown меняют скорость только в режиме
     assert.equal(t.g.gameSpeed, 1);
   });
 
-// Известный дефект: Enter одновременно перезапускает игру и подключает игрока 2.
-test('после победы рестарт Enter не добавляет второго игрока в одиночной игре',
-  { todo: 'issue-medium-restart-with-enter-adds-second-player' }, () => {
-    const t = loadGame({ title: true });
-    t.press('Space'); t.frame(); t.release('Space'); t.frame();
-    t.g.level = t.g.levels.length - 1; t.g.currentLevel.length = 0; t.g.levelCountdown = -1;
-    t.frame();
-    assert.equal(t.g.gameState, 'win');
-    t.press('Enter'); t.frame();
-    assert.equal(t.g.gameState, 'playing');
-    assert.equal(t.g.players.length, 1);
-  });
+// Регрессия: Enter больше не подключает второго игрока (закрыто новой схемой управления).
+test('после победы рестарт Enter не добавляет второго игрока в одиночной игре', () => {
+  const t = loadGame();
+  t.g.level = t.g.levels.length - 1; t.g.currentLevel.length = 0; t.g.levelCountdown = -1;
+  t.frame();
+  assert.equal(t.g.gameState, 'win');
+  t.press('Enter'); t.frame();
+  assert.equal(t.g.gameState, 'playing');
+  assert.equal(t.g.players.length, 1);
+  t.frame(); t.frame();
+  assert.equal(t.g.players.length, 1);
+});
 
-test('после GAME OVER рестарт Enter не добавляет второго игрока в одиночной игре',
-  { todo: 'issue-medium-restart-with-enter-adds-second-player' }, () => {
-    const t = loadGame({ title: true });
-    t.press('Space'); t.frame(); t.release('Space'); t.frame();
-    t.g.players[0].lives = 1;
-    hitPlayer(t); t.frame();
-    assert.equal(t.g.gameState, 'gameover');
-    t.press('Enter'); t.frame();
-    assert.equal(t.g.gameState, 'playing');
-    assert.equal(t.g.players.length, 1);
-  });
+test('после GAME OVER рестарт Enter не добавляет второго игрока в одиночной игре', () => {
+  const t = loadGame();
+  t.g.players[0].lives = 1;
+  hitPlayer(t); t.frame();
+  assert.equal(t.g.gameState, 'gameover');
+  t.press('Enter'); t.frame();
+  assert.equal(t.g.gameState, 'playing');
+  assert.equal(t.g.players.length, 1);
+  t.frame(); t.frame();
+  assert.equal(t.g.players.length, 1);
+});

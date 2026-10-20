@@ -101,7 +101,7 @@ test('лопнувший шар не оставляет осколков и не
 test('шипы не наносят вреда игроку и гарпунам', () => {
   const t = loadGame();
   field(t);
-  t.press('Space'); t.ticks(80);
+  t.press('ArrowUp'); t.ticks(80);
   assert.equal(t.g.players[0].lives, t.g.MAX_LIVES);
   assert.equal(t.g.gameState, 'playing');
 });
@@ -132,7 +132,7 @@ test('шар, разбитый далеко от потолка, делится 
   field(t);
   const p = t.g.players[0];
   ball(t, 3, p.x, 450, 0, 0);
-  t.press('Space'); t.ticks(1); t.release('Space');
+  t.press('ArrowUp'); t.ticks(1); t.release('ArrowUp');
   for (let i = 0; i < 40; i++) t.ticks(1);
   assert.equal(t.g.currentLevel.length, 2);
   assert.ok(t.g.currentLevel.every((b) => b.size === 2));
@@ -193,7 +193,7 @@ test('шипы рисуются только на уровнях с шипами
 
 // ===== Прилипающий гарпун =====
 
-function shoot(t) { t.press('Space'); t.ticks(1); t.release('Space'); return t.g.harpoons[0]; }
+function shoot(t) { t.press('ArrowUp'); t.ticks(1); t.release('ArrowUp'); return t.g.harpoons[0]; }
 
 test('гарпун долетает до потолка без шипов: острие на верху экрана, затем прилипает', () => {
   const t = loadGame();
@@ -243,7 +243,7 @@ test('пока гарпун прилип, второй выстрел невоз
   field(t, false);
   const h = shoot(t);
   while (!h.isStuck) t.ticks(1);
-  t.press('Space'); t.ticks(20); t.release('Space');
+  t.press('ArrowUp'); t.ticks(20); t.release('ArrowUp');
   assert.equal(t.g.harpoons.length, 1);
 });
 
@@ -302,8 +302,8 @@ test('два игрока: каждый прилипший гарпун зани
   field(t, false);
   const [p1, p2] = t.g.players;
   p1.x = 300; p2.x = 900;
-  t.press('Space'); t.ticks(1); t.release('Space');
-  t.press('Enter'); t.ticks(1); t.release('Enter');
+  t.press('ArrowUp'); t.ticks(1); t.release('ArrowUp');
+  t.mouseDown(); t.ticks(1); t.mouseUp();
   assert.equal(t.g.harpoons.length, 2);
   for (let i = 0; i < 100; i++) t.ticks(1);
   assert.equal(t.g.harpoons.length, 0);

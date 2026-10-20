@@ -111,18 +111,23 @@ const MAX_LIVES = 3;
 const INVULNERABLE_FRAMES = 120;
 const HUD_PLAYER_WIDTH = 230;   // ширина блока жизней одного игрока в HUD
 
-// Клавиши задаются физическим кодом (KeyboardEvent.code в нижнем регистре),
-// поэтому не зависят от раскладки (русская, US и т. д.) и от Shift.
+// Схемы управления. Клавиатура задаётся физическим кодом (KeyboardEvent.code
+// в нижнем регистре), поэтому не зависит от раскладки и Shift:
+// ←/→ — движение, ↑ — выстрел. Мышь: смещение влево/вправо — движение
+// (с захватом курсора, Pointer Lock), левая кнопка — выстрел.
+// Схема привязана к игроку (player.control), а не к его номеру.
 const MAX_PLAYERS = 2;
-let controls = {
-    players: [
-        { "keya": "left", "keyd": "right", "space": "shoot" },
-        {
-            "arrowleft": "left", "arrowright": "right",
-            "enter": "shoot", "numpadenter": "shoot", "controlright": "shoot",
-        },
-    ],
+const controls = {
+    keyboard: { "arrowleft": "left", "arrowright": "right", "arrowup": "shoot" },
 };
+const MOUSE_SENSITIVITY = 1;   // логических пикселей поля на пиксель смещения мыши
+const MOUSE_MAX_STEP = 60;     // максимум движения мышью за один шаг (логических px)
+const LOCK_WAIT_FRAMES = 90;   // сколько шагов ждать ответа на запрос захвата курсора
+let mouse = { dx: 0, held: false, clicked: false };
+let viewScale = 1;             // CSS-пикселей на логический пиксель (задаёт resize)
+let pausedByLockLoss = false;  // пауза из-за потери захвата курсора
+let lockError = false;         // запрос захвата отклонён или не поддерживается
+let lockPendingUntil = 0;      // до какого шага ждём ответа на запрос захвата
 
 // Синий и оранжевый хорошо различаются, в том числе при дальтонизме.
 let playerColors = [
@@ -338,6 +343,7 @@ class Player extends Shape {
         this.invulnerable = 0;   // осталось шагов неуязвимости
         this.out = false;        // потерял все жизни и выбыл из игры
         this.spawnX = position.x;
+        this.control = "keyboard";   // "keyboard" | "mouse"
     }
 
     draw(ctx) {
@@ -371,8 +377,13 @@ class Player extends Shape {
     update(speed) {
         if (this.out) return;
         const {speed: speedMod} = this.modifiers;
-        const input = readInput(this.number);
-        if (input["left"] && !input["right"]) {
+        const input = readInput(this.control);
+        if (this.control === "mouse") {
+            // Смещение мыши за шаг (в CSS-пикселях) переводим в логические, с ограничением рывка
+            const move = input.moveX / viewScale * MOUSE_SENSITIVITY;
+            this.x += Math.max(-MOUSE_MAX_STEP, Math.min(MOUSE_MAX_STEP, move));
+            this.x = Math.max(15, Math.min(c.w - 15, this.x));
+        } else if (input["left"] && !input["right"]) {
             this.x -= 5 * speed * speedMod;
             if (this.x < 15) this.x = 15;
         } else if (input["right"] && !input["left"]) {
@@ -386,6 +397,11 @@ class Player extends Shape {
             // ИСПРАВЛЕНО: передаём цвет игрока гарпуну
             harpoons.push(new Harpoon({x: this.x, y: this.y + 25}, this, this.color));
         }
+        if (this.control === "mouse") {
+            // Смещение и щелчок использованы — не применять их повторно
+            mouse.dx = 0;
+            mouse.clicked = false;
+        }
     }
 
     freeShot() {
@@ -395,10 +411,16 @@ class Player extends Shape {
     }
 }
 
-// Действия игрока (left/right/shoot) по нажатым клавишам.
-function readInput(playerNumber) {
+// Действия по схеме управления: left/right/shoot (клавиатура) или
+// shoot и moveX — смещение мыши с прошлого шага (мышь).
+function readInput(scheme) {
     const input = {};
-    const map = controls.players[playerNumber];
+    if (scheme === "mouse") {
+        input.shoot = mouse.held || mouse.clicked;
+        input.moveX = mouseLocked() ? mouse.dx : 0;
+        return input;
+    }
+    const map = controls[scheme] || {};
     for (const key of Object.keys(currentKeys)) {
         if (currentKeys[key] && map[key]) {
             input[map[key]] = true;
@@ -595,12 +617,17 @@ function restart() {
     gameState = "playing";
 }
 
-// Новая игра с заданным числом игроков (1 или 2).
-function startGame(playerCount) {
-    players = [];
-    for (let i = 0; i < Math.min(playerCount, MAX_PLAYERS); i++) {
-        players.push(new Player({x: c.w / 2, y: c.h - 25}, i));
-    }
+// Новая игра. config: число игроков (1 — клавиатура; 2 — клавиатура + мышь)
+// или { controls: ["keyboard" | "mouse", ...] } — схема каждого игрока.
+function startGame(config) {
+    const list = typeof config === "number"
+        ? (config >= 2 ? ["keyboard", "mouse"] : ["keyboard"])
+        : config.controls.slice(0, MAX_PLAYERS);
+    players = list.map((control, i) => {
+        const player = new Player({x: c.w / 2, y: c.h - 25}, i);
+        player.control = control;
+        return player;
+    });
     restart();
 }
 
@@ -749,7 +776,11 @@ function paint() {
     } else if (gameState === "win") {
         drawOverlay("ПОБЕДА!", "Нажмите Enter, чтобы сыграть ещё раз", "gold");
     } else if (pause) {
-        drawOverlay("PAUSE", "ESC / P — продолжить", "#bbb");
+        if (mousePlayer() && !mouseLocked()) {
+            drawOverlay("PAUSE", lockError ? "Не удалось захватить мышь — кликните ещё раз" : "Кликните, чтобы продолжить", "#bbb");
+        } else {
+            drawOverlay("PAUSE", "ESC / P — продолжить", "#bbb");
+        }
     }
 
     if (debug) {
@@ -774,18 +805,114 @@ function debugToggle() {
     }
 }
 
-// Второй игрок подключается нажатием своей кнопки выстрела во время игры.
-// Появляется на свободной половине поля, не сдвигая первого игрока.
-function hotJoin() {
-    if (gameState !== "playing" || pause || players.length >= MAX_PLAYERS) return;
-    if (!readInput(players.length).shoot) return;
-    const player = new Player({x: c.w / 2, y: c.h - 25}, players.length);
-    const taken = players.map((p) => p.x);
-    player.x = taken[0] < c.w / 2 ? c.w * 0.75 : c.w * 0.25;
-    player.spawnX = player.x;
-    player.invulnerable = INVULNERABLE_FRAMES;   // новый игрок не должен погибнуть сразу
-    player.snap();
-    players.push(player);
+// ===== Захват курсора (мышь) =====
+function mouseLocked() {
+    return document.pointerLockElement === canvas;
+}
+
+function lockSupported() {
+    return typeof canvas.requestPointerLock === "function";
+}
+
+function mousePlayer() {
+    return players.find((p) => p.control === "mouse");
+}
+
+// Вызывать из обработчика действия пользователя (клавиша, клик) — иначе браузер откажет.
+function requestMouseLock() {
+    lockError = false;
+    if (!lockSupported()) {
+        lockError = true;
+        return;
+    }
+    lockPendingUntil = time + LOCK_WAIT_FRAMES;
+    try {
+        const result = canvas.requestPointerLock();
+        if (result && typeof result.catch === "function") {
+            result.catch(() => { lockError = true; lockPendingUntil = 0; });
+        }
+    } catch (e) {
+        lockError = true;
+        lockPendingUntil = 0;
+    }
+}
+
+// ===== Меню старта: способ управления и число игроков =====
+const MENU_TOP = 330;
+const MENU_ITEM_H = 64;
+const MENU_ITEM_W = 900;
+let menu = { step: 0, index: 0, control: "keyboard" };
+
+function menuItems() {
+    const noMouse = !lockSupported();
+    if (menu.step === 0) {
+        return [
+            { label: "Клавиатура:  ← →  движение,  ↑  выстрел", value: "keyboard" },
+            { label: "Мышь:  смещение — движение,  левая кнопка — выстрел", value: "mouse", disabled: noMouse },
+        ];
+    }
+    return [
+        { label: "Нет — один игрок", value: 1 },
+        { label: "Да — вдвоём:  игрок 1 — стрелки,  игрок 2 — мышь", value: 2, disabled: noMouse },
+    ];
+}
+
+function menuMove(delta) {
+    const n = menuItems().length;
+    menu.index = (menu.index + delta + n) % n;
+}
+
+function menuBack() {
+    if (menu.step === 1) {
+        menu.step = 0;
+        menu.index = menu.control === "mouse" ? 1 : 0;
+    }
+}
+
+// Подтвердить пункт. Шаг 1 — способ управления для первого игрока,
+// шаг 2 — играть вдвоём. В игре вдвоём первый игрок всегда с клавиатурой,
+// второй — с мышью.
+function menuConfirm() {
+    const item = menuItems()[menu.index];
+    if (!item || item.disabled) return;
+    if (menu.step === 0) {
+        menu.control = item.value;
+        menu.step = 1;
+        menu.index = 0;
+        return;
+    }
+    const list = item.value === 2 ? ["keyboard", "mouse"] : [menu.control];
+    startGame({ controls: list });
+    if (list.includes("mouse")) requestMouseLock();
+}
+
+function menuKey(id) {
+    if (id === "arrowup") menuMove(-1);
+    else if (id === "arrowdown") menuMove(1);
+    else if (id === "enter" || id === "numpadenter" || id === "space") menuConfirm();
+    else if (id === "escape" || id === "backspace") menuBack();
+}
+
+// Координаты события мыши в логических координатах поля
+function canvasPoint(e) {
+    const r = canvas.getBoundingClientRect();
+    const w = Math.max(r.width - 2 * CANVAS_BORDER, 1);
+    const h = Math.max(r.height - 2 * CANVAS_BORDER, 1);
+    return {
+        x: (e.clientX - r.left - CANVAS_BORDER) * c.w / w,
+        y: (e.clientY - r.top - CANVAS_BORDER) * c.h / h,
+    };
+}
+
+function menuItemAt(point) {
+    const items = menuItems();
+    for (let i = 0; i < items.length; i++) {
+        const top = MENU_TOP + i * MENU_ITEM_H;
+        if (Math.abs(point.x - c.w / 2) <= MENU_ITEM_W / 2 && point.y >= top && point.y <= top + MENU_ITEM_H - 12) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 // ===== Титульный экран =====
@@ -797,14 +924,8 @@ let titleBalls = [
     new Circle(1, { x: 1100, y: 400 }, -3, "#ffc107"),
 ];
 
-// Игра начинается по свежему нажатию любой клавиши. Кнопка выстрела
-// игрока 2 запускает игру вдвоём, любая другая — на одного.
 function updateTitle() {
     for (const ball of titleBalls) ball.update(gameSpeed);
-    const fresh = Object.keys(currentKeys).filter((k) => currentKeys[k] && !prevKeys[k]);
-    if (fresh.length === 0) return;
-    const second = fresh.some((k) => controls.players[1][k] === "shoot");
-    startGame(second ? 2 : 1);
 }
 
 function drawTitle() {
@@ -817,23 +938,33 @@ function drawTitle() {
     ctx.textAlign = "center";
     ctx.fillStyle = "gold";
     ctx.font = "bold 96px sans-serif";
-    ctx.fillText("ПУЗЫРЬКИ", c.w / 2, 200);
+    ctx.fillText("ПУЗЫРЬКИ", c.w / 2, 180);
+
+    ctx.fillStyle = "#fff";
+    ctx.font = "34px sans-serif";
+    ctx.fillText(menu.step === 0 ? "Как управлять?" : "Играть вдвоём?", c.w / 2, 270);
 
     ctx.font = "28px sans-serif";
-    ctx.fillStyle = playerColors[0];
-    ctx.fillText("Игрок 1:  A / D — движение,  Пробел — выстрел", c.w / 2, 300);
-    ctx.fillStyle = playerColors[1];
-    ctx.fillText("Игрок 2:  ← / → — движение,  Enter — выстрел", c.w / 2, 350);
+    menuItems().forEach((item, i) => {
+        const top = MENU_TOP + i * MENU_ITEM_H;
+        if (i === menu.index) {
+            ctx.fillStyle = "rgba(255, 215, 0, 0.18)";
+            ctx.fillRect(c.w / 2 - MENU_ITEM_W / 2, top, MENU_ITEM_W, MENU_ITEM_H - 12);
+            ctx.strokeStyle = "gold";
+            ctx.strokeRect(c.w / 2 - MENU_ITEM_W / 2, top, MENU_ITEM_W, MENU_ITEM_H - 12);
+        }
+        ctx.fillStyle = item.disabled ? "#777" : (i === menu.index ? "#fff" : "#ccc");
+        const label = item.disabled ? `${item.label}  (недоступно в этом браузере)` : item.label;
+        ctx.fillText(label, c.w / 2, top + 34);
+    });
 
     ctx.fillStyle = "#ddd";
-    ctx.fillText("Пробел — играть одному,  Enter — играть вдвоём", c.w / 2, 430);
-    ctx.fillText("Esc / P — пауза", c.w / 2, 475);
-
-    if (Math.floor(time / 30) % 2 === 0) {
-        ctx.fillStyle = "#fff";
-        ctx.font = "36px sans-serif";
-        ctx.fillText("Нажмите любую клавишу", c.w / 2, 580);
+    ctx.font = "24px sans-serif";
+    if (menu.step === 1 && menu.control === "mouse") {
+        ctx.fillText("В игре вдвоём игрок 1 переключается на стрелки, игрок 2 получает мышь", c.w / 2, 530);
     }
+    ctx.fillText("↑ ↓ — выбор,  Enter — подтвердить,  Esc — назад;  можно мышью", c.w / 2, 640);
+    ctx.fillText("Esc / P — пауза в игре", c.w / 2, 675);
     ctx.textAlign = "left";
 }
 
@@ -863,11 +994,19 @@ function tick() {
         logic();
     }
 
+    // Игра с мышью невозможна без захвата курсора: теряем захват — пауза
+    if (gameState === "playing" && mousePlayer() && !mouseLocked() && time >= lockPendingUntil && !pause) {
+        pause = true;
+        pausedByLockLoss = true;
+    }
+
     debugSpeed();
     debugToggle();
-    hotJoin();
     restartHeld = restartKey;
     prevKeys = Object.assign({}, currentKeys);
+    // Движение мыши и щелчок живут один шаг
+    mouse.dx = 0;
+    mouse.clicked = false;
 
     time++;
 }
@@ -906,7 +1045,13 @@ function recoverFromError() {
     fatalError = null;
     accumulator = 0;
     prevKeys = Object.assign({}, currentKeys);
-    startGame(Math.max(players.length, 1));
+    if (players.length === 0) {
+        menu = { step: 0, index: 0, control: "keyboard" };
+        gameState = "title";
+    } else {
+        startGame({ controls: players.map((p) => p.control) });
+        if (mousePlayer()) requestMouseLock();
+    }
 }
 
 // Кадр браузера (requestAnimationFrame). Следующий кадр планируется первым,
@@ -947,6 +1092,8 @@ document.addEventListener("keydown", (e) => {
     const id = keyId(e);
     if (PREVENT_DEFAULT_KEYS.has(id)) e.preventDefault();
     currentKeys[id] = true;
+    // Меню старта управляется событиями: захват курсора разрешён только из обработчика действия
+    if (gameState === "title" && !e.repeat) menuKey(id);
 });
 
 document.addEventListener("keyup", (e) => {
@@ -955,10 +1102,69 @@ document.addEventListener("keyup", (e) => {
     currentKeys[id] = false;
 });
 
-// Потеря фокуса: keyup уже не придёт, поэтому сбрасываем нажатые клавиши
+// ===== Мышь =====
+document.addEventListener("mousemove", (e) => {
+    if (gameState === "title") {
+        const i = menuItemAt(canvasPoint(e));
+        if (i >= 0 && !menuItems()[i].disabled) menu.index = i;
+    } else if (mouseLocked()) {
+        mouse.dx += e.movementX || 0;
+    }
+});
+
+document.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;   // правая кнопка и колесо игнорируются
+    if (gameState === "title") {
+        const i = menuItemAt(canvasPoint(e));
+        if (i >= 0 && !menuItems()[i].disabled) {
+            menu.index = i;
+            menuConfirm();
+        }
+        return;
+    }
+    // Клик возвращает захват курсора; сам этот клик не стреляет
+    if (mousePlayer() && !mouseLocked()) {
+        requestMouseLock();
+        if (gameState === "gameover" || gameState === "win") restart();
+        return;
+    }
+    if (gameState === "gameover" || gameState === "win") {
+        restart();
+        return;
+    }
+    if (gameState === "playing" && !pause) {
+        mouse.held = true;
+        mouse.clicked = true;
+    }
+});
+
+document.addEventListener("mouseup", (e) => {
+    if (e.button === 0) mouse.held = false;
+});
+
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+document.addEventListener("pointerlockchange", () => {
+    lockPendingUntil = 0;
+    if (mouseLocked()) {
+        lockError = false;
+        if (pausedByLockLoss) {
+            pause = false;
+            pausedByLockLoss = false;
+        }
+    }
+});
+
+document.addEventListener("pointerlockerror", () => {
+    lockError = true;
+    lockPendingUntil = 0;
+});
+
+// Потеря фокуса: keyup уже не придёт, поэтому сбрасываем нажатые клавиши и мышь
 // и ставим игру на паузу, чтобы персонаж не «убегал» сам.
 function releaseAllKeys() {
     currentKeys = {};
+    mouse = { dx: 0, held: false, clicked: false };
     if (gameState === "playing") pause = true;
 }
 window.addEventListener("blur", releaseAllKeys);
@@ -984,6 +1190,8 @@ function resize() {
     canvas.style.height = `${cssH}px`;
     canvas.width = Math.round(cssW * pixelRatio);
     canvas.height = Math.round(cssH * pixelRatio);
+
+    viewScale = cssW / c.w;
 
     ctx.imageSmoothingEnabled = false;
     ctx.setTransform(canvas.width / c.w, 0, 0, canvas.height / c.h, 0, 0);
