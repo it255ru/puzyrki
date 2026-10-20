@@ -20,7 +20,7 @@ test('титульный экран показывает название, уп�
   assert.ok(texts.some((s) => s.includes('Игрок 2') && s.includes('Enter')));
   assert.ok(texts.some((s) => s.includes('Пробел — играть одному')));
   assert.ok(texts.includes('Нажмите любую клавишу'));
-  assert.ok(!texts.some((s) => s.startsWith('Уровень') || s.startsWith('Жизни')));
+  assert.ok(!texts.some((s) => s.startsWith('Уровень') || s.startsWith('Игрок') && s.includes('♥')));
 });
 
 test('подсказка «Нажмите любую клавишу» мигает', () => {
@@ -48,7 +48,7 @@ test('пробел запускает игру на одного: уровень
   assert.equal(t.g.gameState, 'playing');
   assert.equal(t.g.players.length, 1);
   assert.equal(t.g.level, 0);
-  assert.equal(t.g.lives, t.g.MAX_LIVES);
+  assert.equal(t.g.players[0].lives, t.g.MAX_LIVES);
   assert.equal(t.g.currentLevel.length, t.g.levels[0].balls.length);
 });
 
@@ -122,7 +122,7 @@ test('над каждым игроком рисуется метка с его �
 
 test('метка мигает вместе с игроком при неуязвимости', () => {
   const t = loadGame();
-  t.g.invulnerableTimer = 100;
+  t.g.players[0].invulnerable = 100;
   t.g.time = 0; t.clearCalls(); t.g.paint();
   const hidden = !t.ctx.calls.some((c) => c[0] === 'fillText' && c[1] === '1');
   t.g.time = 5; t.clearCalls(); t.g.paint();

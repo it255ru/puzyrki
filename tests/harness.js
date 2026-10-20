@@ -10,10 +10,10 @@ const HTML = path.join(__dirname, '..', 'index.html');
 
 const LET_VARS = [
   'time', 'gameSpeed', 'level', 'debug', 'debugHeld', 'levelCountdown',
-  'currentKeys', 'harpoons', 'pause', 'pauseHeld', 'restartHeld', 'lastTimestamp', 'accumulator', 'renderAlpha', 'fatalError', 'gameState', 'lives',
-  'invulnerableTimer', 'controls', 'playerColors', 'currentLevel', 'players', 'levels', 'currentSpikes', 'titleBalls', 'prevKeys',
+  'currentKeys', 'harpoons', 'pause', 'pauseHeld', 'restartHeld', 'lastTimestamp', 'accumulator', 'renderAlpha', 'fatalError', 'gameState',
+  'controls', 'playerColors', 'currentLevel', 'players', 'levels', 'currentSpikes', 'titleBalls', 'prevKeys',
 ];
-const CONSTS = ['c', 'weight', 'sizes', 'MAX_LIVES', 'MAX_PLAYERS', 'STEP_MS', 'MAX_FRAME_MS', 'CANVAS_BORDER', 'INITIAL_DY', 'HIT_RISE', 'SPIKE_HEIGHT', 'SPIKE_WIDTH', 'STICK_FRAMES', 'HARPOON_TIP'];
+const CONSTS = ['c', 'weight', 'sizes', 'MAX_LIVES', 'MAX_PLAYERS', 'STEP_MS', 'MAX_FRAME_MS', 'CANVAS_BORDER', 'INITIAL_DY', 'HIT_RISE', 'INVULNERABLE_FRAMES', 'HUD_PLAYER_WIDTH', 'SPIKE_HEIGHT', 'SPIKE_WIDTH', 'STICK_FRAMES', 'HARPOON_TIP'];
 const FUNCS = [
   'Shape', 'Harpoon', 'Enemy', 'Circle', 'Player', 'readInput', 'keyId', 'releaseAllKeys', 'hitImpulse', 'maxRiseSpeed', 'burstAtSpikes', 'drawSpikes', 'checkHit', 'split', 'paused',
   'positionPlayers', 'startGame', 'updateTitle', 'drawTitle', 'loadLevel', 'onPlayerHit', 'restart', 'logic', 'paint', 'drawHUD',

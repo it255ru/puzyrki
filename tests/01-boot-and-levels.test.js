@@ -7,7 +7,7 @@ test('игра стартует: playing, уровень 1, 3 жизни, оди
   const t = loadGame();
   assert.equal(t.g.gameState, 'playing');
   assert.equal(t.g.level, 0);
-  assert.equal(t.g.lives, 3);
+  assert.equal(t.g.players[0].lives, 3);
   assert.equal(t.g.players.length, 1);
   assert.equal(t.g.currentLevel.length, 1);
   assert.equal(t.raf.length, 1);
@@ -71,13 +71,21 @@ test('resize: крошечное окно не даёт нулевой или о
   assert.ok(t.canvas.width > 0 && t.canvas.height > 0);
 });
 
-test('после потери жизни шары возвращаются в исходные позиции', () => {
+test('смена уровня загружает шары в исходных позициях, даже если уровень уже играли', () => {
   const t = loadGame();
   const { x, y, dx, dy } = t.g.currentLevel[0];
   t.ticks(300);
-  t.g.onPlayerHit();
+  t.g.loadLevel(0);
   const b = t.g.currentLevel[0];
   assert.deepEqual([b.x, b.y, b.dx, b.dy], [x, y, dx, dy]);
+});
+
+test('потеря жизни не сбрасывает шары', () => {
+  const t = loadGame();
+  t.ticks(100);
+  const before = t.g.currentLevel.map((b) => [b.x, b.y, b.dx, b.dy]);
+  t.g.onPlayerHit(t.g.players[0]);
+  assert.deepEqual(t.g.currentLevel.map((b) => [b.x, b.y, b.dx, b.dy]), before);
 });
 
 test('после рестарта уровни начинаются с исходного состояния', () => {

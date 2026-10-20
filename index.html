@@ -104,11 +104,12 @@ const START_COOLDOWN = 20;
 // ===== НОВОЕ: состояние игры и жизни =====
 // "title" | "playing" | "gameover" | "win"
 let gameState = "title";
+// Жизни и неуязвимость у каждого игрока свои (поля Player: lives, invulnerable, out).
 const MAX_LIVES = 3;
-let lives = MAX_LIVES;
-// Небольшая неуязвимость после потери жизни (в кадрах),
-// чтобы не потерять все жизни за одно касание.
-let invulnerableTimer = 0;
+// Неуязвимость после потери жизни и при подключении (в шагах), чтобы
+// не потерять все жизни за одно касание.
+const INVULNERABLE_FRAMES = 120;
+const HUD_PLAYER_WIDTH = 230;   // ширина блока жизней одного игрока в HUD
 
 // Клавиши задаются физическим кодом (KeyboardEvent.code в нижнем регистре),
 // поэтому не зависят от раскладки (русская, US и т. д.) и от Shift.
@@ -333,11 +334,16 @@ class Player extends Shape {
             cooldown: 15,
         };
         this.shots = this.modifiers.maxShots;
+        this.lives = MAX_LIVES;
+        this.invulnerable = 0;   // осталось шагов неуязвимости
+        this.out = false;        // потерял все жизни и выбыл из игры
+        this.spawnX = position.x;
     }
 
     draw(ctx) {
+        if (this.out) return;
         // Мигание во время неуязвимости
-        if (invulnerableTimer > 0 && Math.floor(time / 5) % 2 === 0) {
+        if (this.invulnerable > 0 && Math.floor(time / 5) % 2 === 0) {
             return;
         }
         const x = this.drawX;
@@ -363,6 +369,7 @@ class Player extends Shape {
     }
 
     update(speed) {
+        if (this.out) return;
         const {speed: speedMod} = this.modifiers;
         const input = readInput(this.number);
         if (input["left"] && !input["right"]) {
@@ -528,18 +535,19 @@ function printKeys(ctx) {
     }
 }
 
+// Расставить игроков, оставшихся в игре, равномерно по ширине; запомнить точку старта.
 function positionPlayers() {
-    const number = players.length;
-    for (let i = 0; i < number; i++) {
-        const player = players[i];
+    const active = players.filter((p) => !p.out);
+    active.forEach((player, i) => {
         player.y = c.h - 25;
-        player.x = c.w * (i + 1) / (number + 1);
+        player.x = c.w * (i + 1) / (active.length + 1);
+        player.spawnX = player.x;
         player.snap();
-    }
+    });
 }
 
 // Шары создаются заново из данных уровня, поэтому каждая загрузка
-// (старт, потеря жизни, рестарт) начинается с исходного состояния.
+// (старт нового уровня, рестарт) начинается с исходного состояния.
 function loadLevel(n) {
     currentLevel = createBalls(levels[n]);
     currentSpikes = !!levels[n].spikes;
@@ -551,26 +559,36 @@ function loadLevel(n) {
     positionPlayers();
 }
 
-// ===== НОВОЕ: обработка попадания в игрока =====
-function onPlayerHit() {
-    lives--;
-    if (lives <= 0) {
-        gameState = "gameover";
-        harpoons = [];
+// Игрок задет шаром: теряет жизнь, возвращается на старт и получает неуязвимость.
+// Шары и уровень не сбрасываются. Без жизней игрок выбывает; когда выбыли все — GAME OVER.
+function onPlayerHit(player) {
+    player.lives--;
+    harpoons = harpoons.filter((h) => h.owner !== player);
+    player.shots = player.modifiers.maxShots;
+    player.cooldown = 0;
+    if (player.lives <= 0) {
+        player.out = true;
+        if (players.every((p) => p.out)) {
+            gameState = "gameover";
+            harpoons = [];
+        }
     } else {
-        // Перезапускаем текущий уровень, даём неуязвимость
-        loadLevel(level);
-        invulnerableTimer = 120; // ~2 секунды
+        player.x = player.spawnX;
+        player.snap();
+        player.invulnerable = INVULNERABLE_FRAMES;
     }
 }
 
 // ===== НОВОЕ: полный рестарт игры =====
 function restart() {
     level = 0;
-    lives = MAX_LIVES;
     levelCountdown = -1;
-    invulnerableTimer = 0;
     pause = false;
+    for (const p of players) {
+        p.lives = MAX_LIVES;
+        p.invulnerable = 0;
+        p.out = false;
+    }
     loadLevel(0);
     // Кнопка выстрела, которой запускали игру, ещё нажата — не стрелять сразу
     for (const p of players) p.cooldown = START_COOLDOWN;
@@ -602,10 +620,6 @@ function burstAtSpikes() {
 }
 
 function logic() {
-    if (invulnerableTimer > 0) {
-        invulnerableTimer -= gameSpeed;
-    }
-
     if (currentLevel.length == 0) {
         if (levelCountdown > 0) {
             levelCountdown--;
@@ -629,11 +643,14 @@ function logic() {
     burstAtSpikes();
 
     for (let player of players) {
+        if (player.out) continue;
+        if (player.invulnerable > 0) {
+            player.invulnerable -= gameSpeed;
+        }
         player.update(gameSpeed);
-        // ИСПРАВЛЕНО: вместо pause = true — система жизней.
         // Неуязвимость защищает от повторного срабатывания.
-        if (invulnerableTimer <= 0 && checkHit([player], currentLevel, 1)) {
-            onPlayerHit();
+        if (player.invulnerable <= 0 && checkHit([player], currentLevel, 1)) {
+            onPlayerHit(player);
             if (gameState !== "playing") return;
         }
     }
@@ -687,8 +704,14 @@ function drawHUD() {
     ctx.fillStyle = "#eee";
     ctx.textAlign = "left";
     ctx.fillText(`Уровень: ${level + 1}/${levels.length}`, 10, c.h - 15);
+    // Жизни каждого игрока — справа налево, цветом игрока
     ctx.textAlign = "right";
-    ctx.fillText(`Жизни: ${"♥".repeat(Math.max(lives, 0))}`, c.w - 10, c.h - 15);
+    for (let i = players.length - 1; i >= 0; i--) {
+        const p = players[i];
+        const hearts = p.out ? "✖" : "♥".repeat(Math.max(p.lives, 0));
+        ctx.fillStyle = p.out ? "#888" : p.color;
+        ctx.fillText(`Игрок ${p.number + 1}: ${hearts}`, c.w - 10 - (players.length - 1 - i) * HUD_PLAYER_WIDTH, c.h - 15);
+    }
     ctx.textAlign = "left";
 }
 
@@ -759,6 +782,8 @@ function hotJoin() {
     const player = new Player({x: c.w / 2, y: c.h - 25}, players.length);
     const taken = players.map((p) => p.x);
     player.x = taken[0] < c.w / 2 ? c.w * 0.75 : c.w * 0.25;
+    player.spawnX = player.x;
+    player.invulnerable = INVULNERABLE_FRAMES;   // новый игрок не должен погибнуть сразу
     player.snap();
     players.push(player);
 }
