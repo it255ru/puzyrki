@@ -54,7 +54,7 @@ Shape(position, color)          x, y, color
 
 ## Ввод
 
-`keydown`/`keyup` пишут в `currentKeys` и `e.key`, и `e.code`, но `controls.players[number]` и служебные клавиши сопоставляются только по `e.key` — поэтому на нелатинских раскладках управление не работает (см. [issue](issues/issue-high-keyboard-layout-dependent.md)). Ключи `e.code` используются лишь для Space и Shift.
+`keydown`/`keyup` пишут в `currentKeys` идентификатор клавиши `keyId(e)` — физический код в нижнем регистре (`keya`, `space`, `arrowleft`), запасной вариант — символ клавиши, если кода нет. Раскладка и Shift не влияют. `readInput(n)` переводит нажатые клавиши в действия игрока `n` (`left`/`right`/`shoot`) по `controls.players[n]`. `hotJoin()` подключает второго игрока по его кнопке выстрела. На `blur` окна и скрытие вкладки `releaseAllKeys()` сбрасывает клавиши и ставит игру на паузу. Рестарт на экране конца реагирует на свежее нажатие (`restartHeld`).
 
 ## Отрисовка
 

@@ -2,12 +2,15 @@
 
 - **Важность:** medium
 - **Тип:** bug (ввод)
-- **Статус:** open
+- **Статус:** done (PR feat/input-by-code)
 - **Где:** [index.html](../../index.html) — `keydown`/`keyup` listeners
 
 ## Описание
 1. Нет обработчика `blur`/`visibilitychange`: если окно потеряло фокус при зажатой клавише (Alt-Tab, клик в другое окно), `keyup` не придёт и клавиша остаётся нажатой — персонаж «бежит» сам.
 2. `keydown` для Shift+`-` пишет `currentKeys["_"]`, но если пользователь отпустил Shift раньше, `keyup` приходит с `e.key === "-"`, и `"_"` остаётся true навсегда. То же для `+`/`=` и `*`/`8`.
+
+## Итог
+`currentKeys` хранит только `e.code` (пункт 2 снят), на `window.blur` и скрытие вкладки клавиши сбрасываются и игра ставится на паузу. Возобновление — Esc/P.
 
 ## Решение
 - Очищать `currentKeys` на `window.blur` и `document.visibilitychange`.

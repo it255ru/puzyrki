@@ -2,7 +2,7 @@
 
 - **Важность:** medium
 - **Тип:** bug (ввод)
-- **Статус:** open
+- **Статус:** done (PR feat/input-by-code)
 - **Где:** [index.html](../../index.html) — `controls.players`, `hotJoin()`
 
 ## Описание

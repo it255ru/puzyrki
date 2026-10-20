@@ -9,13 +9,13 @@ const path = require('node:path');
 const HTML = path.join(__dirname, '..', 'index.html');
 
 const LET_VARS = [
-  'time', 'gameSpeed', 'level', 'debug', 'debugHeld', 'levelCountdown', 'joinTimer',
-  'currentKeys', 'harpoons', 'pause', 'pauseHeld', 'gameState', 'lives',
+  'time', 'gameSpeed', 'level', 'debug', 'debugHeld', 'levelCountdown',
+  'currentKeys', 'harpoons', 'pause', 'pauseHeld', 'restartHeld', 'gameState', 'lives',
   'invulnerableTimer', 'controls', 'playerColors', 'currentLevel', 'players', 'levels',
 ];
-const CONSTS = ['c', 'weight', 'sizes', 'MAX_LIVES'];
+const CONSTS = ['c', 'weight', 'sizes', 'MAX_LIVES', 'MAX_PLAYERS'];
 const FUNCS = [
-  'Shape', 'Harpoon', 'Enemy', 'Circle', 'Player', 'checkHit', 'split', 'paused',
+  'Shape', 'Harpoon', 'Enemy', 'Circle', 'Player', 'readInput', 'keyId', 'releaseAllKeys', 'checkHit', 'split', 'paused',
   'positionPlayers', 'loadLevel', 'onPlayerHit', 'restart', 'logic', 'paint', 'drawHUD',
   'validateLevel', 'createBalls', 'drawOverlay', 'debugSpeed', 'debugToggle', 'hotJoin', 'step', 'resize',
 ];
@@ -75,6 +75,15 @@ function loadGame({ width = 1280, height = 720, dpr = 1 } = {}) {
     g: api, ctx, canvas, raf, winListeners,
     down: (k, code) => key('keydown', k, code),
     up: (k, code) => key('keyup', k, code),
+    /** Нажать/отпустить физическую клавишу; символ намеренно «чужой» (кириллица) —
+     *  игра обязана ориентироваться на код, а не на символ. */
+    press: (code) => key('keydown', 'ф', code),
+    release: (code) => key('keyup', 'ф', code),
+    /** Событие окна (blur и т. п.). */
+    fireWindow(type) { (winListeners[type] || []).forEach((fn) => fn()); },
+    /** Событие документа (visibilitychange и т. п.). */
+    fireDocument(type) { (listeners[type] || []).forEach((fn) => fn({})); },
+    document,
     /** Выполнить N кадров логики без отрисовки. */
     ticks(n = 1) { for (let i = 0; i < n; i++) api.logic(); },
     /** Выполнить один кадр step() (логика + отрисовка + планирование следующего). */

@@ -50,7 +50,6 @@ let debug = false;
 let debugHeld = false;
 // >0 — пауза между уровнями, 0 — пора загрузить уровень, -1 — уровень загружен
 let levelCountdown = -1;
-let joinTimer = 0;
 
 let currentKeys = {};
 
@@ -58,6 +57,7 @@ let harpoons = [];
 
 let pause = false;
 let pauseHeld = false;
+let restartHeld = false;
 
 // ===== НОВОЕ: состояние игры и жизни =====
 // "playing" | "gameover" | "win"
@@ -68,36 +68,15 @@ let lives = MAX_LIVES;
 // чтобы не потерять все жизни за одно касание.
 let invulnerableTimer = 0;
 
+// Клавиши задаются физическим кодом (KeyboardEvent.code в нижнем регистре),
+// поэтому не зависят от раскладки (русская, US и т. д.) и от Shift.
+const MAX_PLAYERS = 2;
 let controls = {
     players: [
+        { "keya": "left", "keyd": "right", "space": "shoot" },
         {
-            "w": "up", "arrowup": "up",
-            "s": "down", "arrowdown": "down",
-            "a": "left", "arrowleft": "left",
-            "d": "right", "arrowright": "right",
-            " ": "shoot", "spacebar": "shoot", "shift": "shoot",
-        },
-        {
-            "i": "up",
-            "k": "down",
-            "j": "left",
-            "l": "right",
-            "-": "shoot",
-            "_": "shoot",
-        },
-        {
-            "8": "up",
-            "5": "down",
-            "4": "left",
-            "6": "right",
-            "+": "shoot",
-        },
-        {
-            "t": "up",
-            "g": "down",
-            "f": "left",
-            "h": "right",
-            "y": "shoot",
+            "arrowleft": "left", "arrowright": "right",
+            "enter": "shoot", "numpadenter": "shoot", "controlright": "shoot",
         },
     ],
 };
@@ -105,9 +84,7 @@ let controls = {
 let playerColors = [
     "green",
     "blue",
-    "orange",
-    "red",
-]
+];
 
 let currentLevel = [];
 let players = [];
@@ -258,16 +235,7 @@ class Player extends Shape {
 
     update(speed) {
         const {speed: speedMod} = this.modifiers;
-        const input = {};
-        for (const key in currentKeys) {
-            if (!currentKeys.hasOwnProperty(key) || !currentKeys[key]) {
-                continue;
-            }
-            const control = controls.players[this.number][key];
-            if (control) {
-                input[control] = true;
-            }
-        }
+        const input = readInput(this.number);
         if (input["left"] && !input["right"]) {
             this.x -= 5 * speed * speedMod;
             if (this.x < 15) this.x = 15;
@@ -289,6 +257,18 @@ class Player extends Shape {
             this.shots++;
         }
     }
+}
+
+// Действия игрока (left/right/shoot) по нажатым клавишам.
+function readInput(playerNumber) {
+    const input = {};
+    const map = controls.players[playerNumber];
+    for (const key of Object.keys(currentKeys)) {
+        if (currentKeys[key] && map[key]) {
+            input[map[key]] = true;
+        }
+    }
+    return input;
 }
 
 // ========== levels.js ==========
@@ -388,7 +368,7 @@ function split(index, array) {
 }
 
 function paused() {
-    if (currentKeys["escape"] || currentKeys["p"]) {
+    if (currentKeys["escape"] || currentKeys["keyp"]) {
         if (!pauseHeld) pause = !pause;
         pauseHeld = true;
     } else {
@@ -400,8 +380,8 @@ function paused() {
 function printKeys(ctx) {
     if (currentKeys) {
         let message = "";
-        for (const key in currentKeys) {
-            if (currentKeys.hasOwnProperty(key) && currentKeys[key]) {
+        for (const key of Object.keys(currentKeys)) {
+            if (currentKeys[key]) {
                 message += key + " ";
             }
         }
@@ -579,24 +559,26 @@ function debugToggle() {
     }
 }
 
+// Второй игрок подключается нажатием своей кнопки выстрела во время игры.
+// Появляется на свободной половине поля, не сдвигая первого игрока.
 function hotJoin() {
-    if (time > joinTimer + 30) {
-        if (currentKeys["/"] && players.length > 1) {
-            players.pop();
-            joinTimer = time;
-        } else if (currentKeys["*"] && players.length < 4) {
-            players.push(new Player({x: c.w / 2, y: c.h - 25}, players.length));
-            joinTimer = time;
-        }
-    }
+    if (gameState !== "playing" || pause || players.length >= MAX_PLAYERS) return;
+    if (!readInput(players.length).shoot) return;
+    const player = new Player({x: c.w / 2, y: c.h - 25}, players.length);
+    const taken = players.map((p) => p.x);
+    player.x = taken[0] < c.w / 2 ? c.w * 0.75 : c.w * 0.25;
+    players.push(player);
 }
 
 function step() {
+    const restartKey = !!(currentKeys["enter"] || currentKeys["numpadenter"] || currentKeys["keyr"]);
     // ИСПРАВЛЕНО: явный автомат состояний вместо pause = true
     if (gameState === "gameover" || gameState === "win") {
         // Ждём Enter/R для рестарта; логика не крутится,
         // но paint() ниже отрисовывает оверлей каждый кадр.
-        if (currentKeys["enter"] || currentKeys["r"]) {
+        // Только по свежему нажатию: удерживаемый выстрел (Enter у игрока 2)
+        // не должен сразу перезапускать игру.
+        if (restartKey && !restartHeld) {
             restart();
         }
     } else if (!paused()) {
@@ -607,42 +589,43 @@ function step() {
     debugSpeed();
     debugToggle();
     hotJoin();
+    restartHeld = restartKey;
 
     time++;
     window.requestAnimationFrame(step);
 }
 
 // ========== listeners.js ==========
+// Идентификатор клавиши: физический код; запасной вариант — символ клавиши.
+function keyId(e) {
+    return (e.code || e.key || "").toLowerCase();
+}
+
+const PREVENT_DEFAULT_KEYS = new Set([
+    "space", "arrowup", "arrowdown", "arrowleft", "arrowright", "enter",
+]);
+
 document.addEventListener("keydown", (e) => {
-    const k = (e.key || "").toLowerCase();
-    if (k === " " || k === "arrowup" || k === "arrowdown" ||
-        k === "arrowleft" || k === "arrowright") {
-        e.preventDefault();
-    }
-    currentKeys[k] = true;
-    if (e.code) {
-        const code = e.code.toLowerCase();
-        currentKeys[code] = true;
-        if (code === "space") currentKeys[" "] = true;
-        if (code === "shiftleft" || code === "shiftright") currentKeys["shift"] = true;
-    }
-    return false;
+    const id = keyId(e);
+    if (PREVENT_DEFAULT_KEYS.has(id)) e.preventDefault();
+    currentKeys[id] = true;
 });
 
 document.addEventListener("keyup", (e) => {
-    const k = (e.key || "").toLowerCase();
-    if (k === " " || k === "arrowup" || k === "arrowdown" ||
-        k === "arrowleft" || k === "arrowright") {
-        e.preventDefault();
-    }
-    currentKeys[k] = false;
-    if (e.code) {
-        const code = e.code.toLowerCase();
-        currentKeys[code] = false;
-        if (code === "space") currentKeys[" "] = false;
-        if (code === "shiftleft" || code === "shiftright") currentKeys["shift"] = false;
-    }
-    return false;
+    const id = keyId(e);
+    if (PREVENT_DEFAULT_KEYS.has(id)) e.preventDefault();
+    currentKeys[id] = false;
+});
+
+// Потеря фокуса: keyup уже не придёт, поэтому сбрасываем нажатые клавиши
+// и ставим игру на паузу, чтобы персонаж не «убегал» сам.
+function releaseAllKeys() {
+    currentKeys = {};
+    if (gameState === "playing") pause = true;
+}
+window.addEventListener("blur", releaseAllKeys);
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) releaseAllKeys();
 });
 
 window.addEventListener("resize", resize);

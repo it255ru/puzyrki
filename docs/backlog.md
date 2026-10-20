@@ -12,16 +12,16 @@
 |---|----------|--------|--------|
 | 1 | high | [Шары не сбрасываются при перезапуске уровня](issues/issue-high-level-state-not-reset.md) | done |
 | 0a | high | [Первый уровень проходится дважды](issues/issue-high-first-level-played-twice.md) | done |
-| 2 | high | [Управление зависит от раскладки (`e.key` вместо `e.code`)](issues/issue-high-keyboard-layout-dependent.md) | open |
-| 3 | medium | [Shift-символы (`_ + *`) стреляют за игрока 1](issues/issue-medium-shifted-keys-trigger-shoot.md) | open |
-| 4 | medium | [Залипание клавиш при потере фокуса](issues/issue-medium-stuck-keys.md) | open |
+| 2 | high | [Управление зависит от раскладки (`e.key` вместо `e.code`)](issues/issue-high-keyboard-layout-dependent.md) | done |
+| 3 | medium | [Shift-символы (`_ + *`) стреляют за игрока 1](issues/issue-medium-shifted-keys-trigger-shoot.md) | done |
+| 4 | medium | [Залипание клавиш при потере фокуса](issues/issue-medium-stuck-keys.md) | done |
 | 5 | medium | [Столкновения по квадрату, а не по окружности](issues/issue-medium-aabb-circle-collision.md) | open |
 | 6 | medium | [Скорость зависит от частоты монитора](issues/issue-medium-frame-rate-dependent.md) | open |
 | 6a | medium | [Дёрганая анимация шаров и персонажа](issues/issue-medium-animation-jitter.md) | open |
 | 7 | medium | [Исключение останавливает игровой цикл](issues/issue-medium-game-loop-crash-halts-game.md) | open |
-| 8 | medium | [Горячее подключение: наложение, пауза, game over](issues/issue-medium-hotjoin-issues.md) | open |
+| 8 | medium | [Горячее подключение: наложение, пауза, game over](issues/issue-medium-hotjoin-issues.md) | done |
 | 9 | medium | [Рамка канваса вызывает прокрутку](issues/issue-medium-canvas-border-overflow.md) | open |
-| 9a | medium | [Ограничить игру двумя игроками](issues/issue-medium-limit-to-two-players.md) | open |
+| 9a | medium | [Ограничить игру двумя игроками](issues/issue-medium-limit-to-two-players.md) | done |
 | 9b | medium | [Автотесты и CI](issues/issue-medium-no-automated-tests-and-ci.md) | in progress |
 | 10 | low | [Debug-скорость всегда активна](issues/issue-low-debug-speed-always-active.md) | open |
 | 11 | low | [HUD перекрывает игрока, смесь языков](issues/issue-low-hud-overlaps-player.md) | open |
@@ -40,7 +40,7 @@
 | F3 | medium | [Очки, комбо, рекорд](issues/issue-medium-feat-scoring.md) | open |
 | F4 | medium | [Раздельные жизни](issues/issue-medium-feat-per-player-lives.md) | open |
 | F5 | medium | [Уровни как данные, кампания 10–15](issues/issue-medium-feat-level-data-and-campaign.md) | in progress |
-| F6 | medium | [Клавиши двух игроков, подключение второго](issues/issue-medium-feat-two-player-controls.md) | open |
+| F6 | medium | [Клавиши двух игроков, подключение второго](issues/issue-medium-feat-two-player-controls.md) | in progress |
 | F7 | medium | [Playwright smoke-тест в CI](issues/issue-medium-feat-browser-smoke-test.md) | open |
 | F8 | low | [Звук](issues/issue-low-feat-sound.md) | open |
 | F9 | low | [Цвета и метки игроков](issues/issue-low-feat-player-colors-and-labels.md) | open |
