@@ -40,10 +40,10 @@
 | F3 | medium | [Очки, комбо, рекорд](issues/issue-medium-feat-scoring.md) | open |
 | F4 | medium | [Раздельные жизни](issues/issue-medium-feat-per-player-lives.md) | open |
 | F5 | medium | [Уровни как данные, кампания 10–15](issues/issue-medium-feat-level-data-and-campaign.md) | in progress |
-| F6 | medium | [Клавиши двух игроков, подключение второго](issues/issue-medium-feat-two-player-controls.md) | in progress |
+| F6 | medium | [Клавиши двух игроков, подключение второго](issues/issue-medium-feat-two-player-controls.md) | done |
 | F7 | medium | [Playwright smoke-тест в CI](issues/issue-medium-feat-browser-smoke-test.md) | open |
 | F8 | low | [Звук](issues/issue-low-feat-sound.md) | open |
-| F9 | low | [Цвета и метки игроков](issues/issue-low-feat-player-colors-and-labels.md) | open |
+| F9 | low | [Цвета и метки игроков](issues/issue-low-feat-player-colors-and-labels.md) | done |
 | F10 | low | [Лицензия и политика ассетов](issues/issue-low-docs-license-and-assets-policy.md) | open |
 
 ## Идеи (без решения)

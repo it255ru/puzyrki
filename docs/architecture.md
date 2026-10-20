@@ -10,6 +10,7 @@
 
 `step()` вызывается через `requestAnimationFrame` (привязка к частоте монитора; время измеряется в кадрах, не в секундах):
 
+0. Если `gameState` — `title`: `updateTitle()` двигает декоративные шары и ждёт свежее нажатие клавиши (`prevKeys`), затем `startGame(1 или 2)`; `paint()` рисует `drawTitle()`.
 1. Если `gameState` — `gameover`/`win`: ждать Enter/R → `restart()`. Иначе, если не на паузе → `logic()`.
 2. `paint()` — отрисовка каждый кадр (оверлеи тоже, поэтому не пропадают).
 3. `debugSpeed()`, `debugToggle()`, `hotJoin()`.
@@ -26,7 +27,7 @@
 
 | Переменная | Назначение |
 |------------|------------|
-| `gameState` | `"playing"` \| `"gameover"` \| `"win"` |
+| `gameState` | `"title"` \| `"playing"` \| `"gameover"` \| `"win"` |
 | `level`, `levels`, `currentLevel` | номер, определения уровней, живые шары |
 | `players`, `harpoons` | активные игроки и гарпуны |
 | `lives`, `invulnerableTimer` | жизни и неуязвимость (общие) |
