@@ -61,6 +61,15 @@ function maxRiseSpeed(size) {
     return Math.sqrt(2 * weight * sizes[size].weightMod * c.h);
 }
 let levels = [];
+// Потолок с шипами: полоса сверху высотой SPIKE_HEIGHT. Шар, коснувшийся шипов,
+// лопается целиком (без осколков). Включается в данных уровня: spikes: true.
+const SPIKE_HEIGHT = 30;
+const SPIKE_WIDTH = 40;
+let currentSpikes = false;
+// Гарпун, долетев до потолка, прилипает на STICK_FRAMES шагов (~0,5 с).
+const STICK_FRAMES = 30;
+// Расстояние от острия до верха полосы гарпуна (наконечник — 15 px над концом древка)
+const HARPOON_TIP = 15;
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -155,6 +164,8 @@ class Harpoon extends Shape {
         this.h = 0;
         this.ph = 0;
         this.hits = 0;
+        this.stuck = 0;          // >0 — прилип к потолку, осталось шагов
+        this.isStuck = false;
         this.owner = owner;
         this.popping = true;
         this.modifiers = modifiers || {};
@@ -168,6 +179,10 @@ class Harpoon extends Shape {
     }
 
     draw(ctx) {
+        // Перед исчезновением прилипший гарпун мигает
+        if (this.isStuck && this.stuck < 10 && Math.floor(this.stuck / 2) % 2 === 1) {
+            return;
+        }
         const x = this.drawX;
         const y = this.drawY;
         const h = this.ph + (this.h - this.ph) * renderAlpha;
@@ -190,9 +205,26 @@ class Harpoon extends Shape {
         };
     }
 
+    // Высота (y древка), на которой гарпун упирается в потолок или шипы.
+    static stopY() {
+        return (currentSpikes ? SPIKE_HEIGHT : 0) + HARPOON_TIP;
+    }
+
+    // Летит вверх; у потолка прилипает на STICK_FRAMES шагов.
+    // Возвращает false, когда гарпун должен исчезнуть.
     update(speed) {
+        if (this.isStuck) {
+            this.stuck -= speed;
+            return this.stuck > 0;
+        }
         this.h += this.modifiers["speed"] * speed;
-        return this.y - this.h >= 15;
+        const maxH = this.y - Harpoon.stopY();
+        if (this.h >= maxH) {
+            this.h = maxH;
+            this.isStuck = true;
+            this.stuck = STICK_FRAMES;
+        }
+        return true;
     }
 }
 
@@ -213,6 +245,7 @@ class Circle extends Enemy {
         this.dy = INITIAL_DY;
         this.r = thisSize.r;
         this.weightMod = thisSize.weightMod || 1;
+        this.touchedCeiling = false;
     }
 
     draw(ctx) {
@@ -251,6 +284,7 @@ class Circle extends Enemy {
 
         const top = this.r;
         const floor = c.h - this.r;
+        this.touchedCeiling = false;
         let remaining = speed;
         for (let i = 0; i < 4 && remaining > 0; i++) {
             const y1 = this.y + this.dy * remaining + 0.5 * g * remaining * remaining;
@@ -270,6 +304,7 @@ class Circle extends Enemy {
             this.dy += g * t;
             this.y = border;
             this.dy = hitFloor ? -Math.abs(this.dy) : Math.abs(this.dy);
+            if (!hitFloor) this.touchedCeiling = true;
             remaining -= t;
         }
         this.y = Math.min(Math.max(this.y, top), floor);
@@ -366,23 +401,23 @@ function readInput(playerNumber) {
 }
 
 // ========== levels.js ==========
-// Уровни — данные: { balls: [{ size, x, y, dx, color? }] }.
+// Уровни — данные: { balls: [{ size, x, y, dx, color? }], spikes?: boolean }.
 // Объекты Circle создаются заново при каждой загрузке (см. loadLevel).
 levels = [
     { balls: [
         { size: 2, x: c.w / 2, y: 200, dx: 3, color: "#e91e63" },
     ] },
-    { balls: [
+    { spikes: true, balls: [
         { size: 2, x: c.w / 3, y: 200, dx: -3, color: "#9c27b0" },
         { size: 2, x: c.w * 2 / 3, y: 200, dx: 3, color: "#9c27b0" },
     ] },
-    { balls: [
+    { spikes: true, balls: [
         { size: 3, x: c.w / 2, y: 200, dx: 3, color: "#009688" },
     ] },
-    { balls: [
+    { spikes: true, balls: [
         { size: 3, x: c.w / 2, y: 200, dx: 4, color: "#009688" },
     ] },
-    { balls: [
+    { spikes: true, balls: [
         { size: 0, x: 100, y: 500, dx: 3 },
         { size: 1, x: 200, y: 500, dx: 3 },
         { size: 2, x: 300, y: 500, dx: 3 },
@@ -399,6 +434,9 @@ function validateLevel(def, index) {
     const where = (i) => `уровень ${index + 1}, шар ${i + 1}`;
     if (!def || !Array.isArray(def.balls) || def.balls.length === 0) {
         throw new Error(`уровень ${index + 1}: нужен непустой список balls`);
+    }
+    if (def.spikes !== undefined && typeof def.spikes !== "boolean") {
+        throw new Error(`уровень ${index + 1}: spikes должен быть true или false`);
     }
     def.balls.forEach((b, i) => {
         if (!Number.isInteger(b.size) || b.size < 0 || b.size >= sizes.length) {
@@ -504,6 +542,7 @@ function positionPlayers() {
 // (старт, потеря жизни, рестарт) начинается с исходного состояния.
 function loadLevel(n) {
     currentLevel = createBalls(levels[n]);
+    currentSpikes = !!levels[n].spikes;
     harpoons = [];
     for (const p of players) {
         p.shots = p.modifiers.maxShots;
@@ -547,6 +586,21 @@ function startGame(playerCount) {
     restart();
 }
 
+// Шары, коснувшиеся шипов, лопаются целиком (без осколков).
+// Возвращает число лопнувших шаров.
+function burstAtSpikes() {
+    if (!currentSpikes) return 0;
+    let burst = 0;
+    for (let i = currentLevel.length - 1; i >= 0; i--) {
+        const ball = currentLevel[i];
+        if (ball.y - ball.r <= SPIKE_HEIGHT || ball.touchedCeiling) {
+            currentLevel.splice(i, 1);
+            burst++;
+        }
+    }
+    return burst;
+}
+
 function logic() {
     if (invulnerableTimer > 0) {
         invulnerableTimer -= gameSpeed;
@@ -572,6 +626,7 @@ function logic() {
     for (let enemy of currentLevel) {
         enemy.update(gameSpeed);
     }
+    burstAtSpikes();
 
     for (let player of players) {
         player.update(gameSpeed);
@@ -585,13 +640,15 @@ function logic() {
 
     for (let i = harpoons.length - 1; i >= 0; i--) {
         const harpoon = harpoons[i];
-        const hitStatic = harpoon.update(gameSpeed);
+        const alive = harpoon.update(gameSpeed);
         harpoon.hits += checkHit([harpoon], currentLevel, harpoon.modifiers.maxHits);
-        if (harpoon.hits >= harpoon.modifiers.maxHits || !hitStatic) {
+        if (harpoon.hits >= harpoon.modifiers.maxHits || !alive) {
             harpoons.splice(i, 1);
             harpoon.owner.freeShot();
         }
     }
+    // Осколки, родившиеся уже в зоне шипов, лопаются сразу
+    burstAtSpikes();
 }
 
 // ===== НОВОЕ: оверлеи рисуются КАЖДЫЙ кадр — поэтому не пропадают =====
@@ -608,6 +665,21 @@ function drawOverlay(title, subtitle, titleColor) {
     ctx.font = "28px sans-serif";
     ctx.fillText(subtitle, c.w / 2, c.h / 2 + 40);
     ctx.textAlign = "left";
+}
+
+// Ряд шипов вдоль верха экрана (остриями вниз)
+function drawSpikes() {
+    ctx.fillStyle = "#cfd8dc";
+    ctx.strokeStyle = "#78909c";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = 0; x < c.w; x += SPIKE_WIDTH) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + SPIKE_WIDTH / 2, SPIKE_HEIGHT);
+        ctx.lineTo(x + SPIKE_WIDTH, 0);
+    }
+    ctx.fill();
+    ctx.stroke();
 }
 
 function drawHUD() {
@@ -629,6 +701,10 @@ function paint() {
     ctx.fillStyle = "#444";
     ctx.strokeStyle = "#888";
     ctx.fillRect(0, 0, c.w, c.h);
+
+    if (currentSpikes) {
+        drawSpikes();
+    }
 
     for (const harpoon of harpoons) {
         harpoon.draw(ctx);

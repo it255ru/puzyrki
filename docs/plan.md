@@ -17,7 +17,7 @@
 | 4 ✅ | Игровой цикл: фиксированный шаг + интерполяция, защита от исключений, рамка канваса | [частота кадров](issues/issue-medium-frame-rate-dependent.md), [цикл](issues/issue-medium-game-loop-crash-halts-game.md), [рамка](issues/issue-medium-canvas-border-overflow.md) |
 | 5 ✅ | Физика: отскок без потерь, стены, деление, круговые столкновения | [F1, часть 1](issues/issue-medium-feat-hit-impulse-physics.md), [плавность](issues/issue-medium-animation-jitter.md), [окружности](issues/issue-medium-aabb-circle-collision.md), [размер 6](issues/issue-low-biggest-ball-exits-top.md) |
 | 6 ✅ | Подбрасывание при попадании | [F1, часть 2](issues/issue-medium-feat-hit-impulse-physics.md) |
-| 7 | Шипы, лопание о шипы, прилипающий гарпун | [F2](issues/issue-medium-feat-spike-ceiling-sticky-harpoon.md) |
+| 7 ✅ | Шипы, лопание о шипы, прилипающий гарпун | [F2](issues/issue-medium-feat-spike-ceiling-sticky-harpoon.md) |
 | 8 | Раздельные жизни | [F4](issues/issue-medium-feat-per-player-lives.md) |
 | 9 | Очки, комбо, рекорд | [F3](issues/issue-medium-feat-scoring.md) |
 | 10 | Кампания 10–15 уровней, обучающие уровни, баланс | [F5, часть 2](issues/issue-medium-feat-level-data-and-campaign.md), [цвета уровня 5](issues/issue-low-level5-color-low-contrast.md) |
