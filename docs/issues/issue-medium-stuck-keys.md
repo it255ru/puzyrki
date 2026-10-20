@@ -3,7 +3,7 @@
 - **Важность:** medium
 - **Тип:** bug (ввод)
 - **Статус:** open
-- **Где:** [game.html](../../game.html) — `keydown`/`keyup` listeners
+- **Где:** [index.html](../../index.html) — `keydown`/`keyup` listeners
 
 ## Описание
 1. Нет обработчика `blur`/`visibilitychange`: если окно потеряло фокус при зажатой клавише (Alt-Tab, клик в другое окно), `keyup` не придёт и клавиша остаётся нажатой — персонаж «бежит» сам.

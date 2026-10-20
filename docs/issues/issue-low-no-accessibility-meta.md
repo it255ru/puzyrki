@@ -3,7 +3,7 @@
 - **Важность:** low
 - **Тип:** a11y / HTML
 - **Статус:** open
-- **Где:** [game.html](../../game.html) — `<head>`, `<canvas>`
+- **Где:** [index.html](../../index.html) — `<head>`, `<canvas>`
 
 ## Описание
 Нет `<html lang>`, `<meta name="viewport">`, `aria-label`/запасного текста у канваса; нет подсказки по управлению на самой странице; нет тач-управления.

@@ -3,7 +3,7 @@
 - **Важность:** medium
 - **Тип:** bug (плавность / UX)
 - **Статус:** open
-- **Где:** [game.html](../../game.html) — `step()`, `Circle.update/gravity`, `split()`, `Player.update`, `resize()`
+- **Где:** [index.html](../../index.html) — `step()`, `Circle.update/gravity`, `split()`, `Player.update`, `resize()`
 
 ## Описание
 Движение заметно дёргается. Причины найдены чтением кода; частично подтверждены расчётом, на реальном экране не измерялись.

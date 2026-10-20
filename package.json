@@ -1,0 +1,11 @@
+{
+  "name": "puzyrki",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Пузырьки — аркада для 1–2 игроков в одном HTML-файле",
+  "scripts": {
+    "test": "node --test tests/",
+    "test:watch": "node --test --watch tests/"
+  },
+  "engines": { "node": ">=20" }
+}

@@ -1,5 +1,7 @@
 # Backlog
 
+Открытые вопросы с вариантами решений: [decisions.md](decisions.md).
+
 Источник правды по задачам. Подробности — в [issues/](issues/). Порядок внутри уровня — рекомендуемый порядок выполнения. План по этапам: [plan.md](plan.md).
 
 Статусы: `open` · `in progress` · `done` · `wontfix`.
@@ -9,6 +11,7 @@
 | # | Важность | Задача | Статус |
 |---|----------|--------|--------|
 | 1 | high | [Шары не сбрасываются при перезапуске уровня](issues/issue-high-level-state-not-reset.md) | open |
+| 0a | high | [Первый уровень проходится дважды](issues/issue-high-first-level-played-twice.md) | open |
 | 2 | high | [Управление зависит от раскладки (`e.key` вместо `e.code`)](issues/issue-high-keyboard-layout-dependent.md) | open |
 | 3 | medium | [Shift-символы (`_ + *`) стреляют за игрока 1](issues/issue-medium-shifted-keys-trigger-shoot.md) | open |
 | 4 | medium | [Залипание клавиш при потере фокуса](issues/issue-medium-stuck-keys.md) | open |
@@ -18,11 +21,14 @@
 | 7 | medium | [Исключение останавливает игровой цикл](issues/issue-medium-game-loop-crash-halts-game.md) | open |
 | 8 | medium | [Горячее подключение: наложение, пауза, game over](issues/issue-medium-hotjoin-issues.md) | open |
 | 9 | medium | [Рамка канваса вызывает прокрутку](issues/issue-medium-canvas-border-overflow.md) | open |
+| 9a | medium | [Ограничить игру двумя игроками](issues/issue-medium-limit-to-two-players.md) | open |
+| 9b | medium | [Автотесты и CI](issues/issue-medium-no-automated-tests-and-ci.md) | in progress |
 | 10 | low | [Debug-скорость всегда активна](issues/issue-low-debug-speed-always-active.md) | open |
 | 11 | low | [HUD перекрывает игрока, смесь языков](issues/issue-low-hud-overlaps-player.md) | open |
 | 12 | low | [Низкий контраст шаров 5-го уровня](issues/issue-low-level5-color-low-contrast.md) | open |
 | 13 | low | [Мёртвый код и заглушки](issues/issue-low-unused-controls-and-stubs.md) | open |
 | 14 | low | [Линтинг и структура](issues/issue-low-lint-and-structure.md) | open |
+| 15a | low | [Шар размера 6 вылетает за верх](issues/issue-low-biggest-ball-exits-top.md) | open |
 | 15 | low | [Семантика и метаданные страницы](issues/issue-low-no-accessibility-meta.md) | open |
 
 ## Фичи / идеи (без приоритета)

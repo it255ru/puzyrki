@@ -3,7 +3,7 @@
 - **Важность:** low
 - **Тип:** bug / design
 - **Статус:** open
-- **Где:** [game.html](../../game.html) — `debugSpeed()`, `step()`
+- **Где:** [index.html](../../index.html) — `debugSpeed()`, `step()`
 
 ## Описание
 PageUp/PageDown меняют `gameSpeed` независимо от флага `debug` (F2), и скорость нигде не сбрасывается (`restart()` её не трогает). Случайное нажатие незаметно ломает баланс до перезагрузки страницы.

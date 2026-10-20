@@ -3,7 +3,7 @@
 - **Важность:** medium
 - **Тип:** bug (вёрстка)
 - **Статус:** open
-- **Где:** [game.html](../../game.html) — CSS `canvas { border }`, `div { height: 100vh }`, `resize()`
+- **Где:** [index.html](../../index.html) — CSS `canvas { border }`, `div { height: 100vh }`, `resize()`
 
 ## Описание
 `resize()` подгоняет CSS-размер канваса под окно, но рамка `5px dashed gold` добавляется сверху (content-box), так что элемент выше/шире окна на 10 px, и появляется прокрутка. Селектор `div` стилизует все `div` на странице.

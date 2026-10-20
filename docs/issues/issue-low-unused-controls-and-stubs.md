@@ -3,7 +3,7 @@
 - **Важность:** low
 - **Тип:** lint / cleanup
 - **Статус:** open
-- **Где:** [game.html](../../game.html)
+- **Где:** [index.html](../../index.html)
 
 ## Список
 - Действия `up`/`down` в `controls` не используются (`Player.update` читает только left/right/shoot).
