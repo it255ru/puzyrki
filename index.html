@@ -171,6 +171,7 @@ class Circle extends Enemy {
     constructor(size, position, initialSpeed, color) {
         super(size, position, color);
         const thisSize = sizes[size];
+        if (!thisSize) throw new RangeError(`Circle: неизвестный размер ${size}`);
         this.dx = initialSpeed;
         this.dy = -5;
         this.r = thisSize.r;
@@ -291,28 +292,65 @@ class Player extends Shape {
 }
 
 // ========== levels.js ==========
+// Уровни — данные: { balls: [{ size, x, y, dx, color? }] }.
+// Объекты Circle создаются заново при каждой загрузке (см. loadLevel).
 levels = [
-    [
-        new Circle( 2, { x: c.w / 2, y: 200 }, 3, "#3f51b5"),
-    ],
-    [
-        new Circle( 2, { x: c.w / 3, y: 200 }, -3, "#2196f3"),
-        new Circle( 2, { x: c.w * 2 / 3, y: 200 }, 3, "#2196f3"),
-    ],
-    [
-        new Circle( 3, { x: c.w / 2, y: 200 }, 3, "#009688"),
-    ],
-    [
-        new Circle( 3, { x: c.w / 2, y: 200 }, 4, "#009688"),
-    ],
-    [
-        new Circle( 0, { x: 100, y: 500 }, 3 ),
-        new Circle( 1, { x: 200, y: 500 }, 3 ),
-        new Circle( 2, { x: 300, y: 500 }, 3 ),
-        new Circle( 1, { x: 400, y: 500 }, 3 ),
-        new Circle( 0, { x: 500, y: 500 }, 3 ),
-    ],
+    { balls: [
+        { size: 2, x: c.w / 2, y: 200, dx: 3, color: "#3f51b5" },
+    ] },
+    { balls: [
+        { size: 2, x: c.w / 3, y: 200, dx: -3, color: "#2196f3" },
+        { size: 2, x: c.w * 2 / 3, y: 200, dx: 3, color: "#2196f3" },
+    ] },
+    { balls: [
+        { size: 3, x: c.w / 2, y: 200, dx: 3, color: "#009688" },
+    ] },
+    { balls: [
+        { size: 3, x: c.w / 2, y: 200, dx: 4, color: "#009688" },
+    ] },
+    { balls: [
+        { size: 0, x: 100, y: 500, dx: 3 },
+        { size: 1, x: 200, y: 500, dx: 3 },
+        { size: 2, x: 300, y: 500, dx: 3 },
+        { size: 1, x: 400, y: 500, dx: 3 },
+        { size: 0, x: 500, y: 500, dx: 3 },
+    ] },
 ];
+
+// Высота зоны игрока снизу: шар не должен стартовать над головой игрока.
+const PLAYER_ZONE = 50;
+
+// Проверка данных уровня; бросает Error с номером уровня и шара.
+function validateLevel(def, index) {
+    const where = (i) => `уровень ${index + 1}, шар ${i + 1}`;
+    if (!def || !Array.isArray(def.balls) || def.balls.length === 0) {
+        throw new Error(`уровень ${index + 1}: нужен непустой список balls`);
+    }
+    def.balls.forEach((b, i) => {
+        if (!Number.isInteger(b.size) || b.size < 0 || b.size >= sizes.length) {
+            throw new Error(`${where(i)}: size должен быть целым от 0 до ${sizes.length - 1}, получено ${b.size}`);
+        }
+        const r = sizes[b.size].r;
+        if (!Number.isFinite(b.x) || b.x < r || b.x > c.w - r) {
+            throw new Error(`${where(i)}: x=${b.x} вне [${r}, ${c.w - r}]`);
+        }
+        if (!Number.isFinite(b.y) || b.y < r || b.y + r > c.h - PLAYER_ZONE) {
+            throw new Error(`${where(i)}: y=${b.y} вне [${r}, ${c.h - PLAYER_ZONE - r}]`);
+        }
+        if (!Number.isFinite(b.dx)) {
+            throw new Error(`${where(i)}: dx должен быть числом, получено ${b.dx}`);
+        }
+        if (b.color !== undefined && typeof b.color !== "string") {
+            throw new Error(`${where(i)}: color должен быть строкой`);
+        }
+    });
+}
+
+function createBalls(def) {
+    return def.balls.map((b) => new Circle(b.size, { x: b.x, y: b.y }, b.dx, b.color));
+}
+
+levels.forEach(validateLevel);
 
 // ========== index.js ==========
 function checkHit(type, targetType, maxHits) {
@@ -382,11 +420,10 @@ function positionPlayers() {
     }
 }
 
-// ===== НОВОЕ: загрузка уровня с КОПИЕЙ массива =====
-// Раньше было currentLevel = levels[level] — ссылка на исходный массив,
-// который split() портил через splice/push.
+// Шары создаются заново из данных уровня, поэтому каждая загрузка
+// (старт, потеря жизни, рестарт) начинается с исходного состояния.
 function loadLevel(n) {
-    currentLevel = levels[n].slice();
+    currentLevel = createBalls(levels[n]);
     harpoons = [];
     for (const p of players) {
         p.shots = p.modifiers.maxShots;

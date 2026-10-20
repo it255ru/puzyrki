@@ -16,10 +16,10 @@ test('игра стартует: playing, уровень 1, 3 жизни, оди
 test('определено 5 уровней, у каждого есть шары допустимых размеров', () => {
   const t = loadGame();
   assert.equal(t.g.levels.length, 5);
-  for (const lvl of t.g.levels) {
-    assert.ok(lvl.length > 0);
-    for (const b of lvl) assert.ok(b.size >= 0 && b.size < t.g.sizes.length);
-  }
+  t.g.levels.forEach((lvl, i) => {
+    assert.ok(lvl.balls.length > 0);
+    assert.doesNotThrow(() => t.g.validateLevel(lvl, i));
+  });
 });
 
 test('Circle берёт параметры из таблицы sizes', () => {
@@ -49,13 +49,74 @@ test('resize учитывает devicePixelRatio', () => {
   assert.equal(t.canvas.style.width, '1280px');
 });
 
-// Известные дефекты: тесты проходят после исправления соответствующего issue.
-test('после потери жизни шары возвращаются в исходные позиции',
-  { todo: 'issue-high-level-state-not-reset' }, () => {
-    const t = loadGame();
-    const { x, y } = t.g.currentLevel[0];
-    t.ticks(300);
-    t.g.onPlayerHit();
-    assert.equal(t.g.currentLevel[0].x, x);
-    assert.equal(t.g.currentLevel[0].y, y);
-  });
+test('после потери жизни шары возвращаются в исходные позиции', () => {
+  const t = loadGame();
+  const { x, y, dx, dy } = t.g.currentLevel[0];
+  t.ticks(300);
+  t.g.onPlayerHit();
+  const b = t.g.currentLevel[0];
+  assert.deepEqual([b.x, b.y, b.dx, b.dy], [x, y, dx, dy]);
+});
+
+test('после рестарта уровни начинаются с исходного состояния', () => {
+  const t = loadGame();
+  const start = t.g.currentLevel.map((b) => [b.x, b.y, b.dx, b.dy]);
+  t.ticks(200);
+  t.g.gameState = 'win';
+  t.g.restart();
+  assert.deepEqual(t.g.currentLevel.map((b) => [b.x, b.y, b.dx, b.dy]), start);
+});
+
+test('loadLevel создаёт новые объекты и не меняет данные уровня', () => {
+  const t = loadGame();
+  const before = JSON.stringify(t.g.levels);
+  t.g.loadLevel(1);
+  const first = t.g.currentLevel;
+  t.ticks(100);
+  t.g.loadLevel(1);
+  assert.notEqual(t.g.currentLevel[0], first[0]);
+  assert.equal(JSON.stringify(t.g.levels), before);
+});
+
+test('createBalls создаёт шары по описанию', () => {
+  const t = loadGame();
+  const balls = t.g.createBalls({ balls: [{ size: 1, x: 100, y: 200, dx: -2, color: 'red' }] });
+  assert.equal(balls.length, 1);
+  assert.ok(balls[0] instanceof t.g.Circle);
+  assert.deepEqual([balls[0].size, balls[0].x, balls[0].y, balls[0].dx, balls[0].color], [1, 100, 200, -2, 'red']);
+});
+
+test('ни один шар не стартует над игроком или вне поля', () => {
+  const t = loadGame();
+  for (const lvl of t.g.levels) {
+    for (const b of t.g.createBalls(lvl)) {
+      assert.ok(b.x >= b.r && b.x <= t.g.c.w - b.r);
+      assert.ok(b.y >= b.r && b.y + b.r <= t.g.c.h - 50);
+    }
+  }
+});
+
+test('validateLevel отвергает некорректные данные с понятным сообщением', () => {
+  const t = loadGame();
+  const ok = { size: 1, x: 300, y: 200, dx: 2 };
+  const bad = (ball, re) => assert.throws(() => t.g.validateLevel({ balls: [{ ...ok, ...ball }] }, 6), re);
+  assert.doesNotThrow(() => t.g.validateLevel({ balls: [ok] }, 0));
+  assert.throws(() => t.g.validateLevel(null, 0), /уровень 1/);
+  assert.throws(() => t.g.validateLevel({ balls: [] }, 2), /уровень 3/);
+  assert.throws(() => t.g.validateLevel({}, 0), /balls/);
+  bad({ size: 7 }, /уровень 7, шар 1: size/);
+  bad({ size: -1 }, /size/);
+  bad({ size: 1.5 }, /size/);
+  bad({ x: 5 }, /x=5/);
+  bad({ x: 1275 }, /x=1275/);
+  bad({ y: 5 }, /y=5/);
+  bad({ y: 690 }, /y=690/);
+  bad({ dx: NaN }, /dx/);
+  bad({ dx: undefined }, /dx/);
+  bad({ color: 5 }, /color/);
+});
+
+test('Circle с неизвестным размером бросает понятную ошибку', () => {
+  const t = loadGame();
+  assert.throws(() => new t.g.Circle(99, { x: 1, y: 1 }, 1), /неизвестный размер 99/);
+});

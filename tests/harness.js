@@ -17,7 +17,7 @@ const CONSTS = ['c', 'weight', 'sizes', 'MAX_LIVES'];
 const FUNCS = [
   'Shape', 'Harpoon', 'Enemy', 'Circle', 'Player', 'checkHit', 'split', 'paused',
   'positionPlayers', 'loadLevel', 'onPlayerHit', 'restart', 'logic', 'paint', 'drawHUD',
-  'drawOverlay', 'debugSpeed', 'debugToggle', 'hotJoin', 'step', 'resize',
+  'validateLevel', 'createBalls', 'drawOverlay', 'debugSpeed', 'debugToggle', 'hotJoin', 'step', 'resize',
 ];
 
 function extractScript() {

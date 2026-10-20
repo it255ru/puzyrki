@@ -10,7 +10,7 @@
 
 | # | Важность | Задача | Статус |
 |---|----------|--------|--------|
-| 1 | high | [Шары не сбрасываются при перезапуске уровня](issues/issue-high-level-state-not-reset.md) | open |
+| 1 | high | [Шары не сбрасываются при перезапуске уровня](issues/issue-high-level-state-not-reset.md) | done |
 | 0a | high | [Первый уровень проходится дважды](issues/issue-high-first-level-played-twice.md) | done |
 | 2 | high | [Управление зависит от раскладки (`e.key` вместо `e.code`)](issues/issue-high-keyboard-layout-dependent.md) | open |
 | 3 | medium | [Shift-символы (`_ + *`) стреляют за игрока 1](issues/issue-medium-shifted-keys-trigger-shoot.md) | open |
@@ -39,7 +39,7 @@
 | F2 | medium | [Потолок с шипами и прилипающий гарпун](issues/issue-medium-feat-spike-ceiling-sticky-harpoon.md) | open |
 | F3 | medium | [Очки, комбо, рекорд](issues/issue-medium-feat-scoring.md) | open |
 | F4 | medium | [Раздельные жизни](issues/issue-medium-feat-per-player-lives.md) | open |
-| F5 | medium | [Уровни как данные, кампания 10–15](issues/issue-medium-feat-level-data-and-campaign.md) | open |
+| F5 | medium | [Уровни как данные, кампания 10–15](issues/issue-medium-feat-level-data-and-campaign.md) | in progress |
 | F6 | medium | [Клавиши двух игроков, подключение второго](issues/issue-medium-feat-two-player-controls.md) | open |
 | F7 | medium | [Playwright smoke-тест в CI](issues/issue-medium-feat-browser-smoke-test.md) | open |
 | F8 | low | [Звук](issues/issue-low-feat-sound.md) | open |

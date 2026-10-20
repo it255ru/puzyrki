@@ -2,7 +2,7 @@
 
 - **Важность:** high
 - **Тип:** bug (логика)
-- **Статус:** open
+- **Статус:** done (PR feat/level-data)
 - **Где:** [index.html](../../index.html) — `levels`, `loadLevel()`, `restart()`
 
 ## Описание
