@@ -135,7 +135,7 @@ test('попадание гарпуном в падающий шар: оба о�
   const ball = new t.g.Circle(2, { x: p.x, y: 300 }, 0, 'red');
   ball.dy = 3;
   t.g.currentLevel.push(ball);
-  t.press('Space'); t.ticks(1); t.release('Space');
+  t.press('ArrowUp'); t.ticks(1); t.release('ArrowUp');
   for (let i = 0; i < 60 && t.g.currentLevel.length !== 2; i++) t.ticks(1);
   assert.equal(t.g.currentLevel.length, 2);
   assert.ok(t.g.currentLevel.every((b) => b.size === 1));

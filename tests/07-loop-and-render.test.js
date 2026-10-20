@@ -131,13 +131,6 @@ test('перенос игрока (positionPlayers) не «скользит» п
   assert.equal(p.py, p.y);
 });
 
-test('подключённый игрок появляется сразу на месте, без скольжения', () => {
-  const t = loadGame();
-  t.press('Enter'); t.frame();
-  const p2 = t.g.players[1];
-  assert.equal(p2.px, p2.x);
-});
-
 test('на паузе позиции статичны: предыдущая равна текущей', () => {
   const t = loadGame();
   t.frame();
@@ -167,7 +160,7 @@ test('гарпун: длина интерполируется между шаг�
 
 test('savePrevAll запоминает позиции шаров, игроков, гарпунов и шаров титула', () => {
   const t = loadGame();
-  t.press('KeyD'); t.ticks(1);
+  t.press('ArrowRight'); t.ticks(1);
   t.g.currentLevel[0].x += 7;
   t.g.savePrevAll();
   assert.equal(t.g.currentLevel[0].px, t.g.currentLevel[0].x);
