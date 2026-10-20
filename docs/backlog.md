@@ -36,7 +36,7 @@
 | # | Важность | Задача | Статус |
 |---|----------|--------|--------|
 | F1 | medium | [Физика: сохранение энергии и подбрасывание](issues/issue-medium-feat-hit-impulse-physics.md) | done |
-| F2 | medium | [Потолок с шипами и прилипающий гарпун](issues/issue-medium-feat-spike-ceiling-sticky-harpoon.md) | open |
+| F2 | medium | [Потолок с шипами и прилипающий гарпун](issues/issue-medium-feat-spike-ceiling-sticky-harpoon.md) | done |
 | F3 | medium | [Очки, комбо, рекорд](issues/issue-medium-feat-scoring.md) | open |
 | F4 | medium | [Раздельные жизни](issues/issue-medium-feat-per-player-lives.md) | open |
 | F5 | medium | [Уровни как данные, кампания 10–15](issues/issue-medium-feat-level-data-and-campaign.md) | in progress |

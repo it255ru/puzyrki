@@ -2,7 +2,7 @@
 
 - **Важность:** medium
 - **Тип:** feature
-- **Статус:** open
+- **Статус:** done (PR feat/spikes-sticky-harpoon). Очки за шары, лопнувшие о шипы, — в [F3](issue-medium-feat-scoring.md)
 - **Решения:** [decisions.md п. 2 (B), п. 3 (A)](../decisions.md)
 
 ## Требование
