@@ -31,14 +31,27 @@
 | 15a | low | [Шар размера 6 вылетает за верх](issues/issue-low-biggest-ball-exits-top.md) | open |
 | 15 | low | [Семантика и метаданные страницы](issues/issue-low-no-accessibility-meta.md) | open |
 
-## Фичи / идеи (без приоритета)
+## Принятые фичи (решения в [decisions.md](decisions.md))
 
-- Очки, комбо, рекорд (`localStorage`).
+| # | Важность | Задача | Статус |
+|---|----------|--------|--------|
+| F1 | medium | [Физика: сохранение энергии и подбрасывание](issues/issue-medium-feat-hit-impulse-physics.md) | open |
+| F2 | medium | [Потолок с шипами и прилипающий гарпун](issues/issue-medium-feat-spike-ceiling-sticky-harpoon.md) | open |
+| F3 | medium | [Очки, комбо, рекорд](issues/issue-medium-feat-scoring.md) | open |
+| F4 | medium | [Раздельные жизни](issues/issue-medium-feat-per-player-lives.md) | open |
+| F5 | medium | [Уровни как данные, кампания 10–15](issues/issue-medium-feat-level-data-and-campaign.md) | open |
+| F6 | medium | [Клавиши двух игроков, подключение второго](issues/issue-medium-feat-two-player-controls.md) | open |
+| F7 | medium | [Playwright smoke-тест в CI](issues/issue-medium-feat-browser-smoke-test.md) | open |
+| F8 | low | [Звук](issues/issue-low-feat-sound.md) | open |
+| F9 | low | [Цвета и метки игроков](issues/issue-low-feat-player-colors-and-labels.md) | open |
+| F10 | low | [Лицензия и политика ассетов](issues/issue-low-docs-license-and-assets-policy.md) | open |
+
+## Идеи (без решения)
+
 - Бонусы: двойной выстрел (`maxShots`), скорость (`modifiers.speed`), щит, заморозка, пробивающий гарпун (`maxHits`).
 - Платформы, потолок с шипами, твёрдые блоки.
 - Подбрасывание шара при попадании (как в оригинале): гарпун не только делит шар, но и толкает его вверх (импульс `dy`). Серия точных попаданий поднимает шар к потолку с шипами, где он лопается целиком, не дробясь. Если шар разделился у самого потолка, обе половины натыкаются на шипы и лопаются. Требует: потолка с шипами (столкновение с верхней границей), импульса при `split()`, правила «у шипов — не делить, а уничтожать», подбора силы импульса и уровней под эту механику. Связано с [issue про окружности](issues/issue-medium-aabb-circle-collision.md) (точность попаданий критична).
-- Звук и частицы.
-- Раздельные жизни и неуязвимость на игрока.
-- Уровни в JSON / редактор уровней.
+- Частицы при лопании.
+- Редактор уровней.
 - Тач-управление и геймпад.
 - Разбиение на ES-модули, тесты для `split` и `checkHit`.

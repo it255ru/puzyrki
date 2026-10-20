@@ -1,7 +1,9 @@
 # Публикация на GitHub Pages: index.html + assets/.
-# Для приватного репозитория Pages требует платный план GitHub; пока запускается вручную.
+# Запускается при каждом push в main после прохождения тестов.
 name: Pages
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
