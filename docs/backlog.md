@@ -21,6 +21,7 @@
 | 7 | medium | [Исключение останавливает игровой цикл](issues/issue-medium-game-loop-crash-halts-game.md) | done |
 | 8 | medium | [Горячее подключение: наложение, пауза, game over](issues/issue-medium-hotjoin-issues.md) | done |
 | 9 | medium | [Рамка канваса вызывает прокрутку](issues/issue-medium-canvas-border-overflow.md) | done |
+| 9d | low | [Сообщения «второй игрок после победы» и «A/D» — старая сборка; добавлена метка версии](issues/issue-low-old-build-reported-as-bugs.md) | done |
 | 9c | medium | [Рестарт Enter добавляет второго игрока в одиночной игре](issues/issue-medium-restart-with-enter-adds-second-player.md) | done |
 | 9a | medium | [Ограничить игру двумя игроками](issues/issue-medium-limit-to-two-players.md) | done |
 | 9b | medium | [Автотесты и CI](issues/issue-medium-no-automated-tests-and-ci.md) | in progress |
