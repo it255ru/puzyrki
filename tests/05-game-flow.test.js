@@ -395,3 +395,28 @@ test('PageUp/PageDown меняют скорость только в режиме
     t.press('PageUp'); t.frame();
     assert.equal(t.g.gameSpeed, 1);
   });
+
+// Известный дефект: Enter одновременно перезапускает игру и подключает игрока 2.
+test('после победы рестарт Enter не добавляет второго игрока в одиночной игре',
+  { todo: 'issue-medium-restart-with-enter-adds-second-player' }, () => {
+    const t = loadGame({ title: true });
+    t.press('Space'); t.frame(); t.release('Space'); t.frame();
+    t.g.level = t.g.levels.length - 1; t.g.currentLevel.length = 0; t.g.levelCountdown = -1;
+    t.frame();
+    assert.equal(t.g.gameState, 'win');
+    t.press('Enter'); t.frame();
+    assert.equal(t.g.gameState, 'playing');
+    assert.equal(t.g.players.length, 1);
+  });
+
+test('после GAME OVER рестарт Enter не добавляет второго игрока в одиночной игре',
+  { todo: 'issue-medium-restart-with-enter-adds-second-player' }, () => {
+    const t = loadGame({ title: true });
+    t.press('Space'); t.frame(); t.release('Space'); t.frame();
+    t.g.players[0].lives = 1;
+    hitPlayer(t); t.frame();
+    assert.equal(t.g.gameState, 'gameover');
+    t.press('Enter'); t.frame();
+    assert.equal(t.g.gameState, 'playing');
+    assert.equal(t.g.players.length, 1);
+  });
