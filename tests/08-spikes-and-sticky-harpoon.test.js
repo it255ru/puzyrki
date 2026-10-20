@@ -102,7 +102,7 @@ test('шипы не наносят вреда игроку и гарпунам',
   const t = loadGame();
   field(t);
   t.press('Space'); t.ticks(80);
-  assert.equal(t.g.lives, t.g.MAX_LIVES);
+  assert.equal(t.g.players[0].lives, t.g.MAX_LIVES);
   assert.equal(t.g.gameState, 'playing');
 });
 
@@ -287,12 +287,12 @@ test('прилипший гарпун мигает перед исчезнове
   assert.ok(drawn.slice(20).some((d) => !d) && drawn.slice(20).some(Boolean), 'в конце мигает');
 });
 
-test('потеря жизни убирает прилипшие гарпуны, выстрелы возвращены', () => {
+test('потеря жизни убирает прилипшие гарпуны игрока, выстрел возвращён', () => {
   const t = loadGame();
   field(t, false);
   const h = shoot(t);
   while (!h.isStuck) t.ticks(1);
-  t.g.onPlayerHit();
+  t.g.onPlayerHit(t.g.players[0]);
   assert.equal(t.g.harpoons.length, 0);
   assert.equal(t.g.players[0].shots, t.g.players[0].modifiers.maxShots);
 });

@@ -2,7 +2,7 @@
 
 - **Важность:** medium
 - **Тип:** feature
-- **Статус:** open
+- **Статус:** done (PR feat/per-player-lives)
 - **Решение:** [decisions.md п. 5](../decisions.md) — вариант A
 
 ## Требование
