@@ -25,6 +25,11 @@ jobs:
           node-version: 20
       - run: npm test
       - run: mkdir dist && cp index.html dist/ && cp -r assets dist/assets
+      # Метка сборки (хеш коммита и время) видна в игре — по ней отличают актуальную версию от кеша
+      - run: |
+          grep -q '"__BUILD__"' dist/index.html
+          sed -i "s/\"__BUILD__\"/\"${GITHUB_SHA::7} $(date -u '+%Y-%m-%d %H:%M')\"/" dist/index.html
+          grep -q '__BUILD__' dist/index.html && exit 1 || true
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

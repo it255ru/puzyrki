@@ -29,6 +29,10 @@
 </body>
 <script type="text/javascript">
 // ========== vars.js ==========
+// Метка сборки: при публикации workflow Pages подставляет сюда короткий хеш коммита
+// и время; локально остаётся «dev». Видна на титульном экране и на паузе —
+// по ней можно отличить актуальную версию от устаревшей копии или кеша браузера.
+const BUILD = "__BUILD__";
 const c = {w: 1280, h: 720}
 const weight = 0.2;
 // r — радиус, weightMod — множитель гравитации (большие шары «плавают» медленнее).
@@ -900,6 +904,7 @@ function paint() {
         } else {
             drawOverlay("PAUSE", "ESC / P — продолжить", "#bbb");
         }
+        drawBuildLabel();
     }
 
     if (debug) {
@@ -1047,6 +1052,18 @@ function updateTitle() {
     for (const ball of titleBalls) ball.update(gameSpeed);
 }
 
+function buildLabel() {
+    return BUILD.startsWith("__") ? "dev" : BUILD;
+}
+
+function drawBuildLabel() {
+    ctx.font = "18px sans-serif";
+    ctx.fillStyle = "#888";
+    ctx.textAlign = "right";
+    ctx.fillText(`версия: ${buildLabel()}`, c.w - 12, c.h - 12);
+    ctx.textAlign = "left";
+}
+
 function drawTitle() {
     ctx.fillStyle = "#444";
     ctx.fillRect(0, 0, c.w, c.h);
@@ -1085,6 +1102,7 @@ function drawTitle() {
     ctx.fillText("↑ ↓ — выбор,  Enter — подтвердить,  Esc — назад;  можно мышью", c.w / 2, 640);
     ctx.fillText("Esc / P — пауза в игре", c.w / 2, 675);
     ctx.textAlign = "left";
+    drawBuildLabel();
 }
 
 // Запомнить позиции всех объектов перед шагом логики (для интерполяции).
