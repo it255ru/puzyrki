@@ -10,7 +10,41 @@ test('split: шар размера 2 даёт два шара размера 1 �
   assert.equal(arr.length, 2);
   assert.deepEqual(arr.map((b) => b.size), [1, 1]);
   assert.deepEqual(arr.map((b) => b.dx).sort(), [-3, 3]);
-  assert.ok(arr.every((b) => b.color === 'red' && b.x === 300 && b.y === 300));
+  assert.ok(arr.every((b) => b.color === 'red' && b.y === 300));
+});
+
+test('split: осколки расходятся в стороны на половину своего радиуса', () => {
+  const t = loadGame();
+  const arr = [new t.g.Circle(2, { x: 300, y: 300 }, 3, 'red')];
+  t.g.split(0, arr);
+  const r = t.g.sizes[1].r;
+  const xs = arr.map((b) => b.x).sort((a, b) => a - b);
+  assert.deepEqual(xs, [300 - r / 2, 300 + r / 2]);
+  const right = arr.find((b) => b.x > 300);
+  assert.ok(right.dx > 0, 'правый осколок летит вправо');
+});
+
+test('split: осколки у стены остаются внутри поля', () => {
+  const t = loadGame();
+  for (const x of [32, 1248]) {
+    const arr = [new t.g.Circle(2, { x, y: 300 }, 3, 'red')];
+    t.g.split(0, arr);
+    for (const b of arr) assert.ok(b.x >= b.r && b.x <= t.g.c.w - b.r, `x=${b.x}`);
+  }
+});
+
+test('split: осколки наследуют подъём родителя, но подпрыгивают не слабее SPLIT_KICK', () => {
+  const t = loadGame();
+  const make = (dy) => {
+    const b = new t.g.Circle(2, { x: 300, y: 300 }, 3, 'red');
+    b.dy = dy;
+    const arr = [b];
+    t.g.split(0, arr);
+    return arr.map((x) => x.dy);
+  };
+  assert.deepEqual(make(-12), [-12, -12]); // быстрый подъём сохраняется
+  assert.deepEqual(make(-2), [-t.g.SPLIT_KICK, -t.g.SPLIT_KICK]); // слабый — подтягивается
+  assert.deepEqual(make(9), [-t.g.SPLIT_KICK, -t.g.SPLIT_KICK]); // падающий — подбрасывается
 });
 
 test('split: шар размера 0 исчезает без осколков', () => {

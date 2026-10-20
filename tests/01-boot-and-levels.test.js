@@ -26,7 +26,8 @@ test('Circle берёт параметры из таблицы sizes', () => {
   const t = loadGame();
   const b = new t.g.Circle(3, { x: 100, y: 100 }, 4, 'red');
   assert.equal(b.r, t.g.sizes[3].r);
-  assert.equal(b.bs, t.g.sizes[3].bs);
+  assert.equal(b.weightMod, t.g.sizes[3].weightMod);
+  assert.equal(b.dy, t.g.INITIAL_DY);
   assert.equal(b.dx, 4);
   assert.equal(b.color, 'red');
 });

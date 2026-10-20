@@ -15,9 +15,9 @@
 | 2 | high | [Управление зависит от раскладки (`e.key` вместо `e.code`)](issues/issue-high-keyboard-layout-dependent.md) | done |
 | 3 | medium | [Shift-символы (`_ + *`) стреляют за игрока 1](issues/issue-medium-shifted-keys-trigger-shoot.md) | done |
 | 4 | medium | [Залипание клавиш при потере фокуса](issues/issue-medium-stuck-keys.md) | done |
-| 5 | medium | [Столкновения по квадрату, а не по окружности](issues/issue-medium-aabb-circle-collision.md) | open |
+| 5 | medium | [Столкновения по квадрату, а не по окружности](issues/issue-medium-aabb-circle-collision.md) | done |
 | 6 | medium | [Скорость зависит от частоты монитора](issues/issue-medium-frame-rate-dependent.md) | done |
-| 6a | medium | [Дёрганая анимация шаров и персонажа](issues/issue-medium-animation-jitter.md) | in progress |
+| 6a | medium | [Дёрганая анимация шаров и персонажа](issues/issue-medium-animation-jitter.md) | done |
 | 7 | medium | [Исключение останавливает игровой цикл](issues/issue-medium-game-loop-crash-halts-game.md) | done |
 | 8 | medium | [Горячее подключение: наложение, пауза, game over](issues/issue-medium-hotjoin-issues.md) | done |
 | 9 | medium | [Рамка канваса вызывает прокрутку](issues/issue-medium-canvas-border-overflow.md) | done |
@@ -28,14 +28,14 @@
 | 12 | low | [Низкий контраст шаров 5-го уровня](issues/issue-low-level5-color-low-contrast.md) | open |
 | 13 | low | [Мёртвый код и заглушки](issues/issue-low-unused-controls-and-stubs.md) | open |
 | 14 | low | [Линтинг и структура](issues/issue-low-lint-and-structure.md) | open |
-| 15a | low | [Шар размера 6 вылетает за верх](issues/issue-low-biggest-ball-exits-top.md) | open |
+| 15a | low | [Шар размера 6 вылетает за верх](issues/issue-low-biggest-ball-exits-top.md) | done |
 | 15 | low | [Семантика и метаданные страницы](issues/issue-low-no-accessibility-meta.md) | open |
 
 ## Принятые фичи (решения в [decisions.md](decisions.md))
 
 | # | Важность | Задача | Статус |
 |---|----------|--------|--------|
-| F1 | medium | [Физика: сохранение энергии и подбрасывание](issues/issue-medium-feat-hit-impulse-physics.md) | open |
+| F1 | medium | [Физика: сохранение энергии и подбрасывание](issues/issue-medium-feat-hit-impulse-physics.md) | in progress |
 | F2 | medium | [Потолок с шипами и прилипающий гарпун](issues/issue-medium-feat-spike-ceiling-sticky-harpoon.md) | open |
 | F3 | medium | [Очки, комбо, рекорд](issues/issue-medium-feat-scoring.md) | open |
 | F4 | medium | [Раздельные жизни](issues/issue-medium-feat-per-player-lives.md) | open |

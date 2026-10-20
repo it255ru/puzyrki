@@ -13,7 +13,7 @@ const LET_VARS = [
   'currentKeys', 'harpoons', 'pause', 'pauseHeld', 'restartHeld', 'lastTimestamp', 'accumulator', 'renderAlpha', 'fatalError', 'gameState', 'lives',
   'invulnerableTimer', 'controls', 'playerColors', 'currentLevel', 'players', 'levels', 'titleBalls', 'prevKeys',
 ];
-const CONSTS = ['c', 'weight', 'sizes', 'MAX_LIVES', 'MAX_PLAYERS', 'STEP_MS', 'MAX_FRAME_MS', 'CANVAS_BORDER'];
+const CONSTS = ['c', 'weight', 'sizes', 'MAX_LIVES', 'MAX_PLAYERS', 'STEP_MS', 'MAX_FRAME_MS', 'CANVAS_BORDER', 'INITIAL_DY', 'SPLIT_KICK'];
 const FUNCS = [
   'Shape', 'Harpoon', 'Enemy', 'Circle', 'Player', 'readInput', 'keyId', 'releaseAllKeys', 'checkHit', 'split', 'paused',
   'positionPlayers', 'startGame', 'updateTitle', 'drawTitle', 'loadLevel', 'onPlayerHit', 'restart', 'logic', 'paint', 'drawHUD',
