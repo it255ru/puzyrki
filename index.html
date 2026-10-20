@@ -7,20 +7,22 @@
         body {
             margin: 0;
             background: black;
+            overflow: hidden;
         }
-        div {
+        #game {
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
         }
+        /* Толщина рамки (5px) учитывается в resize() — см. CANVAS_BORDER */
         canvas {
             border: 5px dashed gold;
         }
     </style>
 </head>
 <body>
-    <div>
+    <div id="game">
         <canvas id="canvas" height=720 width=1280>
         </canvas>
     </div>
@@ -58,6 +60,15 @@ let harpoons = [];
 let pause = false;
 let pauseHeld = false;
 let restartHeld = false;
+// Фиксированный шаг логики 60 Гц; отрисовка — на каждый кадр браузера
+// с интерполяцией между предыдущим и текущим состоянием.
+const STEP_MS = 1000 / 60;
+const MAX_FRAME_MS = 250;   // после паузы/просадки не пытаемся «догнать» больше этого
+let lastTimestamp = null;
+let accumulator = 0;
+let renderAlpha = 1;        // доля шага для интерполяции при отрисовке (0..1)
+let fatalError = null;      // исключение в цикле: игра показывает ошибку, а не замирает
+const CANVAS_BORDER = 5;    // должно совпадать с border в CSS
 let prevKeys = {};
 const START_COOLDOWN = 20;
 
@@ -97,14 +108,32 @@ class Shape {
     constructor(position, color) {
         this.x = position.x;
         this.y = position.y;
+        this.px = this.x;   // позиция на предыдущем шаге — для интерполяции
+        this.py = this.y;
         this.color = color || "#666";
     }
+
+    // Запомнить текущую позицию перед очередным шагом логики.
+    savePrev() {
+        this.px = this.x;
+        this.py = this.y;
+    }
+
+    // Мгновенный перенос (без «скольжения» при отрисовке).
+    snap() {
+        this.px = this.x;
+        this.py = this.y;
+    }
+
+    get drawX() { return this.px + (this.x - this.px) * renderAlpha; }
+    get drawY() { return this.py + (this.y - this.py) * renderAlpha; }
 }
 
 class Harpoon extends Shape {
     constructor(position, owner, color, modifiers) {
         super(position, color);
         this.h = 0;
+        this.ph = 0;
         this.hits = 0;
         this.owner = owner;
         this.popping = true;
@@ -113,14 +142,22 @@ class Harpoon extends Shape {
         this.modifiers.maxHits = this.modifiers.maxHits || 1;
     }
 
+    savePrev() {
+        super.savePrev();
+        this.ph = this.h;
+    }
+
     draw(ctx) {
+        const x = this.drawX;
+        const y = this.drawY;
+        const h = this.ph + (this.h - this.ph) * renderAlpha;
         ctx.fillStyle = this.color;
-        ctx.fillRect(this.x - 1, this.y - this.h, 3, this.h);
+        ctx.fillRect(x - 1, y - h, 3, h);
 
         ctx.beginPath();
-        ctx.moveTo(this.x - 2, this.y - this.h);
-        ctx.lineTo(this.x + 0.5, this.y - this.h - 15);
-        ctx.lineTo(this.x + 3, this.y - this.h);
+        ctx.moveTo(x - 2, y - h);
+        ctx.lineTo(x + 0.5, y - h - 15);
+        ctx.lineTo(x + 3, y - h);
         ctx.fill();
     }
 
@@ -162,7 +199,7 @@ class Circle extends Enemy {
     draw(ctx) {
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+        ctx.arc(this.drawX, this.drawY, this.r, 0, 2 * Math.PI);
         ctx.closePath();
         ctx.fill();
     }
@@ -222,14 +259,16 @@ class Player extends Shape {
         if (invulnerableTimer > 0 && Math.floor(time / 5) % 2 === 0) {
             return;
         }
+        const x = this.drawX;
+        const y = this.drawY;
         ctx.fillStyle = this.color;
-        ctx.fillRect(this.x - 15, this.y - 25, 30, 50);
-        ctx.strokeRect(this.x - 15, this.y - 25, 30, 50);
+        ctx.fillRect(x - 15, y - 25, 30, 50);
+        ctx.strokeRect(x - 15, y - 25, 30, 50);
         // Метка с номером над игроком — различима и без цвета
         ctx.font = "bold 20px sans-serif";
         ctx.textAlign = "center";
         ctx.fillStyle = "#fff";
-        ctx.fillText(String(this.number + 1), this.x, this.y - 32);
+        ctx.fillText(String(this.number + 1), x, y - 32);
         ctx.textAlign = "left";
     }
 
@@ -406,6 +445,7 @@ function positionPlayers() {
         const player = players[i];
         player.y = c.h - 25;
         player.x = c.w * (i + 1) / (number + 1);
+        player.snap();
     }
 }
 
@@ -592,6 +632,7 @@ function hotJoin() {
     const player = new Player({x: c.w / 2, y: c.h - 25}, players.length);
     const taken = players.map((p) => p.x);
     player.x = taken[0] < c.w / 2 ? c.w * 0.75 : c.w * 0.25;
+    player.snap();
     players.push(player);
 }
 
@@ -644,14 +685,23 @@ function drawTitle() {
     ctx.textAlign = "left";
 }
 
-function step() {
+// Запомнить позиции всех объектов перед шагом логики (для интерполяции).
+function savePrevAll() {
+    for (const list of [harpoons, currentLevel, players, titleBalls]) {
+        for (const obj of list) obj.savePrev();
+    }
+}
+
+// Один шаг игры (1/60 с): логика + служебные клавиши. Без отрисовки.
+function tick() {
     const restartKey = !!(currentKeys["enter"] || currentKeys["numpadenter"] || currentKeys["keyr"]);
+    savePrevAll();
     // ИСПРАВЛЕНО: явный автомат состояний вместо pause = true
     if (gameState === "title") {
         updateTitle();
     } else if (gameState === "gameover" || gameState === "win") {
         // Ждём Enter/R для рестарта; логика не крутится,
-        // но paint() ниже отрисовывает оверлей каждый кадр.
+        // но paint() рисует оверлей каждый кадр.
         // Только по свежему нажатию: удерживаемый выстрел (Enter у игрока 2)
         // не должен сразу перезапускать игру.
         if (restartKey && !restartHeld) {
@@ -661,7 +711,6 @@ function step() {
         logic();
     }
 
-    paint();
     debugSpeed();
     debugToggle();
     hotJoin();
@@ -669,7 +718,67 @@ function step() {
     prevKeys = Object.assign({}, currentKeys);
 
     time++;
-    window.requestAnimationFrame(step);
+}
+
+// Накопить прошедшее время и выполнить нужное число шагов; вернуть их количество.
+function advance(timestamp) {
+    let dt = STEP_MS;
+    if (timestamp != null && lastTimestamp != null) {
+        dt = Math.min(Math.max(timestamp - lastTimestamp, 0), MAX_FRAME_MS);
+    }
+    if (timestamp != null) lastTimestamp = timestamp;
+    accumulator += dt;
+    let steps = 0;
+    while (accumulator >= STEP_MS - 1e-6) {
+        accumulator -= STEP_MS;
+        tick();
+        steps++;
+    }
+    renderAlpha = Math.min(Math.max(accumulator / STEP_MS, 0), 1);
+    return steps;
+}
+
+// Экран ошибки: цикл жив, пользователь видит причину и может начать заново.
+function drawFatalError() {
+    ctx.fillStyle = "#222";
+    ctx.fillRect(0, 0, c.w, c.h);
+    drawOverlay("ОШИБКА", "Нажмите Enter, чтобы начать заново", "#e53935");
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#999";
+    ctx.font = "20px monospace";
+    ctx.fillText(String(fatalError && fatalError.message || fatalError).slice(0, 110), c.w / 2, c.h / 2 + 90);
+    ctx.textAlign = "left";
+}
+
+function recoverFromError() {
+    fatalError = null;
+    accumulator = 0;
+    prevKeys = Object.assign({}, currentKeys);
+    startGame(Math.max(players.length, 1));
+}
+
+// Кадр браузера (requestAnimationFrame). Следующий кадр планируется первым,
+// чтобы исключение в логике или отрисовке не останавливало цикл.
+function loop(timestamp) {
+    window.requestAnimationFrame(loop);
+    try {
+        if (fatalError) {
+            const fresh = Object.keys(currentKeys).some((k) => currentKeys[k] && !prevKeys[k] &&
+                (k === "enter" || k === "numpadenter" || k === "keyr"));
+            prevKeys = Object.assign({}, currentKeys);
+            if (fresh) recoverFromError();
+            else drawFatalError();
+            return;
+        }
+        advance(timestamp);
+        paint();
+    } catch (e) {
+        fatalError = e;
+        renderAlpha = 1;
+        prevKeys = Object.assign({}, currentKeys); // удержанные клавиши не считаются свежими
+        console.error(e);
+        try { drawFatalError(); } catch (_) { /* канвас недоступен */ }
+    }
 }
 
 // ========== listeners.js ==========
@@ -710,19 +819,22 @@ window.addEventListener("resize", resize);
 // ИСПРАВЛЕНО: простой и предсказуемый расчёт масштаба
 function resize() {
     const pixelRatio = window.devicePixelRatio || 1;
-    const availW = window.innerWidth;
-    const availH = window.innerHeight;
+    // Рамка канваса рисуется снаружи (content-box), поэтому вычитаем её из доступной области
+    const availW = window.innerWidth - 2 * CANVAS_BORDER;
+    const availH = window.innerHeight - 2 * CANVAS_BORDER;
 
-    const rescale = Math.min(availW / c.w, availH / c.h, 1.25);
+    const rescale = Math.max(Math.min(availW / c.w, availH / c.h, 1.25), 0.1);
 
-    canvas.width = c.w * rescale * pixelRatio;
-    canvas.height = c.h * rescale * pixelRatio;
-
-    canvas.style.width = `${c.w * rescale}px`;
-    canvas.style.height = `${c.h * rescale}px`;
+    // Целые размеры: иначе браузер округляет сам и картинка слегка пересэмплируется
+    const cssW = Math.round(c.w * rescale);
+    const cssH = Math.round(c.h * rescale);
+    canvas.style.width = `${cssW}px`;
+    canvas.style.height = `${cssH}px`;
+    canvas.width = Math.round(cssW * pixelRatio);
+    canvas.height = Math.round(cssH * pixelRatio);
 
     ctx.imageSmoothingEnabled = false;
-    ctx.setTransform(rescale * pixelRatio, 0, 0, rescale * pixelRatio, 0, 0);
+    ctx.setTransform(canvas.width / c.w, 0, 0, canvas.height / c.h, 0, 0);
 }
 
 resize();
@@ -730,6 +842,6 @@ resize();
 // ========== Запуск ==========
 // Игра стартует с титульного экрана (gameState = "title"), игроки
 // создаются в startGame().
-window.requestAnimationFrame(step);
+window.requestAnimationFrame(loop);
 </script>
 </html>

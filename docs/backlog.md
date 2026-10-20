@@ -16,11 +16,11 @@
 | 3 | medium | [Shift-символы (`_ + *`) стреляют за игрока 1](issues/issue-medium-shifted-keys-trigger-shoot.md) | done |
 | 4 | medium | [Залипание клавиш при потере фокуса](issues/issue-medium-stuck-keys.md) | done |
 | 5 | medium | [Столкновения по квадрату, а не по окружности](issues/issue-medium-aabb-circle-collision.md) | open |
-| 6 | medium | [Скорость зависит от частоты монитора](issues/issue-medium-frame-rate-dependent.md) | open |
-| 6a | medium | [Дёрганая анимация шаров и персонажа](issues/issue-medium-animation-jitter.md) | open |
-| 7 | medium | [Исключение останавливает игровой цикл](issues/issue-medium-game-loop-crash-halts-game.md) | open |
+| 6 | medium | [Скорость зависит от частоты монитора](issues/issue-medium-frame-rate-dependent.md) | done |
+| 6a | medium | [Дёрганая анимация шаров и персонажа](issues/issue-medium-animation-jitter.md) | in progress |
+| 7 | medium | [Исключение останавливает игровой цикл](issues/issue-medium-game-loop-crash-halts-game.md) | done |
 | 8 | medium | [Горячее подключение: наложение, пауза, game over](issues/issue-medium-hotjoin-issues.md) | done |
-| 9 | medium | [Рамка канваса вызывает прокрутку](issues/issue-medium-canvas-border-overflow.md) | open |
+| 9 | medium | [Рамка канваса вызывает прокрутку](issues/issue-medium-canvas-border-overflow.md) | done |
 | 9a | medium | [Ограничить игру двумя игроками](issues/issue-medium-limit-to-two-players.md) | done |
 | 9b | medium | [Автотесты и CI](issues/issue-medium-no-automated-tests-and-ci.md) | in progress |
 | 10 | low | [Debug-скорость всегда активна](issues/issue-low-debug-speed-always-active.md) | open |

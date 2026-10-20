@@ -36,17 +36,38 @@ test('шар без цвета получает цвет по умолчанию
   assert.equal(new t.g.Circle(0, { x: 1, y: 1 }, 1).color, '#666');
 });
 
-test('resize: размеры канваса масштабируются под окно, не больше 1.25x', () => {
-  const small = loadGame({ width: 640, height: 360 });
-  assert.equal(small.canvas.style.width, '640px');
-  const huge = loadGame({ width: 4000, height: 3000 });
-  assert.equal(huge.canvas.style.width, `${1280 * 1.25}px`);
+test('resize: канвас вместе с рамкой помещается в окно (без прокрутки) и сохраняет пропорции 16:9', () => {
+  for (const [w, h] of [[640, 360], [1280, 720], [1920, 1080], [900, 900], [500, 1200]]) {
+    const t = loadGame({ width: w, height: h });
+    const cssW = parseInt(t.canvas.style.width, 10);
+    const cssH = parseInt(t.canvas.style.height, 10);
+    assert.ok(cssW + 2 * t.g.CANVAS_BORDER <= w, `${w}x${h}: ширина ${cssW}`);
+    assert.ok(cssH + 2 * t.g.CANVAS_BORDER <= h, `${w}x${h}: высота ${cssH}`);
+    assert.ok(Math.abs(cssW / cssH - 16 / 9) < 0.02, `${w}x${h}: пропорции ${cssW}x${cssH}`);
+  }
 });
 
-test('resize учитывает devicePixelRatio', () => {
-  const t = loadGame({ width: 1280, height: 720, dpr: 2 });
-  assert.equal(t.canvas.width, 2560);
-  assert.equal(t.canvas.style.width, '1280px');
+test('resize: масштаб не больше 1.25x', () => {
+  const t = loadGame({ width: 4000, height: 3000 });
+  assert.equal(t.canvas.style.width, `${1280 * 1.25}px`);
+  assert.equal(t.canvas.style.height, `${720 * 1.25}px`);
+});
+
+test('resize: размеры канваса целые, матрица согласована с размером', () => {
+  for (const dpr of [1, 1.25, 1.5, 2, 2.625]) {
+    const t = loadGame({ width: 1111, height: 777, dpr });
+    const cssW = parseInt(t.canvas.style.width, 10);
+    assert.ok(Number.isInteger(t.canvas.width) && Number.isInteger(t.canvas.height));
+    assert.equal(t.canvas.width, Math.round(cssW * dpr));
+    const m = t.ctx.calls.filter((c) => c[0] === 'setTransform').pop();
+    assert.ok(Math.abs(m[1] - t.canvas.width / 1280) < 1e-9);
+    assert.ok(Math.abs(m[4] - t.canvas.height / 720) < 1e-9);
+  }
+});
+
+test('resize: крошечное окно не даёт нулевой или отрицательный размер', () => {
+  const t = loadGame({ width: 5, height: 5 });
+  assert.ok(t.canvas.width > 0 && t.canvas.height > 0);
 });
 
 test('после потери жизни шары возвращаются в исходные позиции', () => {

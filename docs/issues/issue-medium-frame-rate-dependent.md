@@ -2,7 +2,7 @@
 
 - **Важность:** medium
 - **Тип:** bug (архитектура игрового цикла)
-- **Статус:** open
+- **Статус:** done (PR feat/fixed-timestep)
 - **Где:** [index.html](../../index.html) — `step()`, `Circle.update`, `Player.update`, таймеры в кадрах
 
 ## Описание

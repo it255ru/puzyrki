@@ -11,7 +11,7 @@
 - Высота подбора предсказуема: для каждого размера задан импульс, подобранный так, чтобы серия попаданий достигала потолка.
 
 ## Зависимости
-Фиксированный шаг и интерполяция ([#6](issue-medium-frame-rate-dependent.md), [#6a](issue-medium-animation-jitter.md)), исправление пола/стен, окружности ([#5](issue-medium-aabb-circle-collision.md)), шар размера 6 ([issue](issue-low-biggest-ball-exits-top.md)).
+Фиксированный шаг и интерполяция (готово: [#6](issue-medium-frame-rate-dependent.md)), плавность ([#6a](issue-medium-animation-jitter.md), пункты 2–5), исправление пола/стен, окружности ([#5](issue-medium-aabb-circle-collision.md)), шар размера 6 ([issue](issue-low-biggest-ball-exits-top.md)).
 
 ## Тесты (новые)
 - Шар после отскока возвращается на высоту падения (± погрешность).

@@ -2,7 +2,7 @@
 
 - **Важность:** medium
 - **Тип:** bug (вёрстка)
-- **Статус:** open
+- **Статус:** done (PR feat/fixed-timestep)
 - **Где:** [index.html](../../index.html) — CSS `canvas { border }`, `div { height: 100vh }`, `resize()`
 
 ## Описание
