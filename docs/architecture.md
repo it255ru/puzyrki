@@ -51,7 +51,7 @@
 Shape(position, color)          x, y, color
 ├─ Harpoon                      h (длина), hits, owner, modifiers{speed, maxHits}
 ├─ Enemy(size, position, color)
-│  └─ Circle                    dx, dy, r, bs, weightMod (из sizes[size])
+│  └─ Circle                    dx, dy, r, weightMod (из sizes[size])
 └─ Player                       number, cooldown, shots, modifiers{speed, maxShots, cooldown}
 ```
 
@@ -59,9 +59,15 @@ Shape(position, color)          x, y, color
 
 ## Столкновения
 
+Шар — окружность: `Circle.intersects(rect)` проверяет расстояние от центра до ближайшей точки прямоугольника. `bounds()` оставлен как bounding box для остальных объектов.
+
+
 `checkHit(attackers, targets, maxHits)` — AABB-проверка `target.intersects(attacker.bounds())`. Если у атакующего `popping === true` (гарпун), цели помечаются на `split()`. Индексы удаляются от большего к меньшему, чтобы `splice` не сбивал порядок. Для игрока `popping` не задан, поэтому шар не разбивается.
 
-Шар проверяется своим bounding box (квадрат), а не окружностью — на углах возможны «фантомные» попадания.
+
+## Физика шара
+
+`Circle.update(speed)`: по x — равномерное движение с зеркальным отражением от стен; по y — движение с постоянным ускорением `g = weight · weightMod`, где касание пола или потолка находится решением квадратного уравнения, шаг делится в точке касания, скорость отражается (`|dy|`). Поэтому энергия сохраняется: за 20 000 шагов верхняя точка прыжка не меняется (проверено тестами для всех размеров и `gameSpeed` 0.5–3).
 
 ## Ввод
 

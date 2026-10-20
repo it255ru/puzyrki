@@ -31,15 +31,22 @@
 // ========== vars.js ==========
 const c = {w: 1280, h: 720}
 const weight = 0.2;
+// r — радиус, weightMod — множитель гравитации (большие шары «плавают» медленнее).
+// Отскок упругий (без потерь): высота прыжка определяется высотой падения.
 const sizes = [
-    { bs: 9,  r: 10, weightMod: 1 },
-    { bs: 11, r: 20, weightMod: 1 },
-    { bs: 13, r: 30, weightMod: 1 },
-    { bs: 14, r: 40, weightMod: 1 },
-    { bs: 15, r: 50, weightMod: 1 },
-    { bs: 12, r: 70, weightMod: 0.7 },
-    { bs: 9,  r: 80, weightMod: 0.4 },
+    { r: 10, weightMod: 1 },
+    { r: 20, weightMod: 1 },
+    { r: 30, weightMod: 1 },
+    { r: 40, weightMod: 1 },
+    { r: 50, weightMod: 1 },
+    { r: 70, weightMod: 0.7 },
+    { r: 80, weightMod: 0.4 },
 ];
+// Начальная вертикальная скорость шара (вверх), px за шаг.
+const INITIAL_DY = -5;
+// Осколки подпрыгивают не слабее этой скорости вверх (временная замена
+// импульса от попадания, см. issue про подбрасывание).
+const SPLIT_KICK = 6;
 let levels = [];
 
 const canvas = document.getElementById("canvas");
@@ -190,9 +197,8 @@ class Circle extends Enemy {
         const thisSize = sizes[size];
         if (!thisSize) throw new RangeError(`Circle: неизвестный размер ${size}`);
         this.dx = initialSpeed;
-        this.dy = -5;
+        this.dy = INITIAL_DY;
         this.r = thisSize.r;
-        this.bs = thisSize.bs;
         this.weightMod = thisSize.weightMod || 1;
     }
 
@@ -213,30 +219,57 @@ class Circle extends Enemy {
         }
     }
 
+    // Движение с постоянным ускорением: y += v·t + g·t²/2, v += g·t.
+    // Пол и потолок отражают шар в точный момент касания (шаг делится на части),
+    // поэтому отскок упругий без потерь и накопления ошибки: высота прыжка
+    // определяется высотой падения. Стены отражают положение зеркально
+    // (по x движение равномерное, так что это точно).
     update(speed) {
+        const g = weight * this.weightMod;
         this.x += this.dx * speed;
-        this.gravity(speed);
-        if (this.x > c.w - this.r || this.x < this.r) {
-            this.dx = -this.dx;
-            this.x += this.dx * speed;
+        if (this.x < this.r) {
+            this.x = 2 * this.r - this.x;
+            this.dx = Math.abs(this.dx);
+        } else if (this.x > c.w - this.r) {
+            this.x = 2 * (c.w - this.r) - this.x;
+            this.dx = -Math.abs(this.dx);
         }
+        this.x = Math.min(Math.max(this.x, this.r), c.w - this.r);
+
+        const top = this.r;
+        const floor = c.h - this.r;
+        let remaining = speed;
+        for (let i = 0; i < 4 && remaining > 0; i++) {
+            const y1 = this.y + this.dy * remaining + 0.5 * g * remaining * remaining;
+            if (y1 >= top && y1 <= floor) {
+                this.y = y1;
+                this.dy += g * remaining;
+                remaining = 0;
+                break;
+            }
+            // Время касания границы: 0.5·g·t² + v·t + (y − граница) = 0
+            const hitFloor = y1 > floor;
+            const border = hitFloor ? floor : top;
+            const disc = Math.max(this.dy * this.dy - 2 * g * (this.y - border), 0);
+            const root = Math.sqrt(disc);
+            let t = hitFloor ? (-this.dy + root) / g : (-this.dy - root) / g;
+            t = Math.min(Math.max(t, 0), remaining);
+            this.dy += g * t;
+            this.y = border;
+            this.dy = hitFloor ? -Math.abs(this.dy) : Math.abs(this.dy);
+            remaining -= t;
+        }
+        this.y = Math.min(Math.max(this.y, top), floor);
     }
 
+    // Круг пересекается с прямоугольником bound {x1, x2, y1, y2}:
+    // расстояние от центра до ближайшей точки прямоугольника не больше радиуса.
     intersects(bound) {
-        const b2 = this.bounds();
-        return !(b2.x2 < bound.x1 ||
-                b2.x1 > bound.x2 ||
-                b2.y2 < bound.y1 ||
-                b2.y1 > bound.y2);
-    }
-
-    gravity(speed) {
-        this.dy += weight * this.weightMod * speed;
-        this.y += this.dy * speed;
-        if (this.y > c.h - this.r) {
-            this.dy = -this.bs;
-            this.y += this.dy * speed;
-        }
+        const nx = Math.min(Math.max(this.x, bound.x1), bound.x2);
+        const ny = Math.min(Math.max(this.y, bound.y1), bound.y2);
+        const dx = this.x - nx;
+        const dy = this.y - ny;
+        return dx * dx + dy * dy <= this.r * this.r;
     }
 }
 
@@ -406,12 +439,17 @@ function split(index, array) {
     array.splice(index, 1);
     const size = obj.size - 1;
     if (size >= 0) {
-        const pos = { x: obj.x, y: obj.y };
         const dx = obj.dx || (Math.random() > 0.5 ? 2 : -2);
-        array.push(
-            new obj.constructor(size, pos,  dx, obj.color),
-            new obj.constructor(size, pos, -dx, obj.color)
-        );
+        const r = sizes[size].r;
+        // Осколки расходятся в стороны и наследуют вертикальную скорость родителя,
+        // но подпрыгивают не слабее SPLIT_KICK.
+        const dy = Math.min(obj.dy || 0, -SPLIT_KICK);
+        for (const side of [1, -1]) {
+            const x = Math.min(Math.max(obj.x + side * r * 0.5, r), c.w - r);
+            const child = new obj.constructor(size, { x, y: obj.y }, side * dx, obj.color);
+            child.dy = dy;
+            array.push(child);
+        }
     }
 }
 

@@ -2,7 +2,7 @@
 
 - **Важность:** low
 - **Тип:** bug (физика)
-- **Статус:** open
+- **Статус:** done (PR feat/physics-elastic-circles) — потолок отражает шар; тест проходит для всех размеров
 - **Где:** [index.html](../../index.html) — `sizes[6]`, `Circle.gravity()`
 - **Найдено:** автотестами (`tests/02-physics.test.js`, todo)
 

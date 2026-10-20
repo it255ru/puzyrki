@@ -2,7 +2,7 @@
 
 - **Важность:** medium
 - **Тип:** bug (геймплей)
-- **Статус:** open
+- **Статус:** done (PR feat/physics-elastic-circles)
 - **Где:** [index.html](../../index.html) — `Circle.intersects()`, `checkHit()`
 
 ## Описание
