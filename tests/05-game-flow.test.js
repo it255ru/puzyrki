@@ -57,7 +57,7 @@ test('GAME OVER: оверлей рисуется каждый кадр; Enter п
     t.frame();
     assert.ok(t.texts().includes('GAME OVER'), `кадр ${i}`);
   }
-  t.down('Enter');
+  t.press('Enter');
   t.frame();
   assert.equal(t.g.gameState, 'playing');
   assert.equal(t.g.lives, t.g.MAX_LIVES);
@@ -67,7 +67,7 @@ test('GAME OVER: оверлей рисуется каждый кадр; Enter п
 test('R тоже перезапускает игру', () => {
   const t = loadGame();
   t.g.gameState = 'gameover';
-  t.down('r');
+  t.press('KeyR');
   t.frame();
   assert.equal(t.g.gameState, 'playing');
 });
@@ -93,7 +93,7 @@ test('очистка последнего уровня → ПОБЕДА; Enter �
   t.clearCalls();
   t.frame();
   assert.ok(t.texts().includes('ПОБЕДА!'));
-  t.down('Enter');
+  t.press('Enter');
   t.frame();
   assert.equal(t.g.gameState, 'playing');
   assert.equal(t.g.level, 0);
@@ -113,7 +113,7 @@ test('пауза: Esc останавливает логику, повторно�
   const t = loadGame();
   t.frame();
   const b = t.g.currentLevel[0];
-  t.down('Escape');
+  t.press('Escape');
   t.frame(); t.frame();
   assert.equal(t.g.pause, true);
   const y = b.y;
@@ -121,9 +121,9 @@ test('пауза: Esc останавливает логику, повторно�
   assert.equal(b.y, y);
   t.clearCalls(); t.frame();
   assert.ok(t.texts().includes('PAUSE'));
-  t.up('Escape');
+  t.release('Escape');
   t.frame();
-  t.down('p');
+  t.press('KeyP');
   t.frame();
   assert.equal(t.g.pause, false);
 });
@@ -139,21 +139,21 @@ test('HUD показывает уровень и жизни', () => {
 
 test('отладка: F2 переключает режим, PageUp/PageDown меняют скорость', () => {
   const t = loadGame();
-  t.down('F2'); t.frame(); t.up('F2'); t.frame(); // кадр без клавиши снимает «удержание»
+  t.press('F2'); t.frame(); t.release('F2'); t.frame(); // кадр без клавиши снимает «удержание»
   assert.equal(t.g.debug, true);
-  t.down('F2'); t.frame(); t.up('F2'); t.frame();
+  t.press('F2'); t.frame(); t.release('F2'); t.frame();
   assert.equal(t.g.debug, false);
   const before = t.g.gameSpeed;
-  t.down('PageUp'); t.frame(); t.up('PageUp');
+  t.press('PageUp'); t.frame(); t.release('PageUp');
   assert.ok(t.g.gameSpeed > before);
-  t.down('PageDown'); t.frame(); t.frame(); t.up('PageDown');
+  t.press('PageDown'); t.frame(); t.frame(); t.release('PageDown');
   assert.ok(t.g.gameSpeed < before + 0.01);
 });
 
 test('paint в режиме отладки рисует нажатые клавиши', () => {
   const t = loadGame();
   t.g.debug = true;
-  t.down('q');
+  t.press('KeyQ');
   t.clearCalls();
   t.frame();
   assert.ok(t.texts().some((s) => s.includes('q')));
@@ -196,19 +196,10 @@ test('после restart() очистка уровня 1 ведёт на уро�
     assert.equal(t.g.level, 1);
   });
 
-test('hotJoin не работает на паузе и на экране GAME OVER',
-  { todo: 'issue-medium-hotjoin-issues' }, () => {
-    const t = loadGame();
-    t.g.gameState = 'gameover';
-    t.down('*'); t.g.time = 100;
-    t.frame();
-    assert.equal(t.g.players.length, 1);
-  });
-
 test('PageUp/PageDown меняют скорость только в режиме отладки',
   { todo: 'issue-low-debug-speed-always-active' }, () => {
     const t = loadGame();
-    t.down('PageUp'); t.frame();
+    t.press('PageUp'); t.frame();
     assert.equal(t.g.gameSpeed, 1);
   });
 
@@ -228,3 +219,15 @@ test('после перехода на следующий уровень очи�
     t.g.currentLevel.length = 0; t.ticks(100);
     assert.equal(t.g.level, 2);
   });
+
+test('удерживаемая кнопка выстрела игрока 2 (Enter) не перезапускает игру сразу после GAME OVER', () => {
+  const t = loadGame();
+  t.press('Enter'); t.frame(); // подключили игрока 2 и держим Enter
+  t.g.lives = 1; hitPlayer(t); t.frame();
+  assert.equal(t.g.gameState, 'gameover');
+  t.frame(); t.frame();
+  assert.equal(t.g.gameState, 'gameover', 'удержание не перезапускает');
+  t.release('Enter'); t.frame();
+  t.press('Enter'); t.frame();
+  assert.equal(t.g.gameState, 'playing', 'новое нажатие перезапускает');
+});

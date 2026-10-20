@@ -2,7 +2,7 @@
 
 - **Важность:** medium
 - **Тип:** requirement
-- **Статус:** open
+- **Статус:** done (PR feat/input-by-code)
 - **Где:** [index.html](../../index.html) — `controls.players`, `playerColors`, `hotJoin()`, `positionPlayers()`
 
 ## Требование

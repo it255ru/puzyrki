@@ -6,7 +6,7 @@
 - **Где:** [index.html](../../index.html)
 
 ## Список
-- Действия `up`/`down` в `controls` не используются (`Player.update` читает только left/right/shoot).
+- ~~Действия `up`/`down` в `controls` не используются~~ — удалены (PR feat/input-by-code).
 - `Enemy.intersects` — пустая заглушка; реализация только в `Circle`.
 - `weightMod: 1` в `sizes` дублирует дефолт `|| 1`.
 - `Harpoon.modifiers` — мутируется входной объект `modifiers`.

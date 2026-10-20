@@ -2,7 +2,7 @@
 
 - **Важность:** high
 - **Тип:** bug (ввод)
-- **Статус:** open
+- **Статус:** done (PR feat/input-by-code)
 - **Где:** [index.html](../../index.html) — `controls`, `paused()`, `step()`, обработчики `keydown`/`keyup`
 
 ## Описание
