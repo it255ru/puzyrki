@@ -2,7 +2,7 @@
 
 - **Важность:** medium
 - **Тип:** feature
-- **Статус:** done (PR feat/input-by-code + feat/title-screen-colors-labels)
+- **Статус:** done (PR feat/input-by-code + feat/title-screen-colors-labels); схема управления пересмотрена — см. [F11](issue-high-feat-new-controls-arrows-and-mouse.md)
 - **Решение:** [decisions.md п. 9](../decisions.md) — вариант A
 
 ## Требование

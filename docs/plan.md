@@ -19,6 +19,7 @@
 | 6 ✅ | Подбрасывание при попадании | [F1, часть 2](issues/issue-medium-feat-hit-impulse-physics.md) |
 | 7 ✅ | Шипы, лопание о шипы, прилипающий гарпун | [F2](issues/issue-medium-feat-spike-ceiling-sticky-harpoon.md) |
 | 8 ✅ | Раздельные жизни | [F4](issues/issue-medium-feat-per-player-lives.md) |
+| 8а | **Новое управление**: стрелки + мышь (Pointer Lock), меню выбора способа и числа игроков | [F11](issues/issue-high-feat-new-controls-arrows-and-mouse.md), закрывает [баг рестарта Enter](issues/issue-medium-restart-with-enter-adds-second-player.md) |
 | 9 | Очки, комбо, рекорд | [F3](issues/issue-medium-feat-scoring.md) |
 | 10 | Кампания 10–15 уровней, обучающие уровни, баланс | [F5, часть 2](issues/issue-medium-feat-level-data-and-campaign.md), [цвета уровня 5](issues/issue-low-level5-color-low-contrast.md) |
 | 11 | Playwright smoke-тест в CI | [F7](issues/issue-medium-feat-browser-smoke-test.md) |
@@ -27,6 +28,7 @@
 
 ## Порядок и зависимости
 - 1 и 2 первыми: небольшие и убирают ложные падения в тестах уровней.
+- 8а до 9: очки и подсказки опираются на меню и схему ввода.
 - 3 до 8: раздельные жизни и подключение второго игрока опираются на новую схему ввода.
 - 4 до 5–6: подбрасывание нельзя подбирать, пока шаг логики зависит от частоты кадров.
 - 5 → 6 → 7: шипы и правила лопания считаются от новой физики.

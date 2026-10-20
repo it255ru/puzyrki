@@ -45,6 +45,7 @@
 | F7 | medium | [Playwright smoke-тест в CI](issues/issue-medium-feat-browser-smoke-test.md) | open |
 | F8 | low | [Звук](issues/issue-low-feat-sound.md) | open |
 | F9 | low | [Цвета и метки игроков](issues/issue-low-feat-player-colors-and-labels.md) | done |
+| F11 | high | [Новое управление: стрелки + мышь, меню выбора](issues/issue-high-feat-new-controls-arrows-and-mouse.md) | open |
 | F10 | low | [Лицензия и политика ассетов](issues/issue-low-docs-license-and-assets-policy.md) | open |
 
 ## Идеи (без решения)
