@@ -11,12 +11,12 @@ const HTML = path.join(__dirname, '..', 'index.html');
 const LET_VARS = [
   'time', 'gameSpeed', 'level', 'debug', 'debugHeld', 'levelCountdown',
   'currentKeys', 'harpoons', 'pause', 'pauseHeld', 'restartHeld', 'gameState', 'lives',
-  'invulnerableTimer', 'controls', 'playerColors', 'currentLevel', 'players', 'levels',
+  'invulnerableTimer', 'controls', 'playerColors', 'currentLevel', 'players', 'levels', 'titleBalls', 'prevKeys',
 ];
 const CONSTS = ['c', 'weight', 'sizes', 'MAX_LIVES', 'MAX_PLAYERS'];
 const FUNCS = [
   'Shape', 'Harpoon', 'Enemy', 'Circle', 'Player', 'readInput', 'keyId', 'releaseAllKeys', 'checkHit', 'split', 'paused',
-  'positionPlayers', 'loadLevel', 'onPlayerHit', 'restart', 'logic', 'paint', 'drawHUD',
+  'positionPlayers', 'startGame', 'updateTitle', 'drawTitle', 'loadLevel', 'onPlayerHit', 'restart', 'logic', 'paint', 'drawHUD',
   'validateLevel', 'createBalls', 'drawOverlay', 'debugSpeed', 'debugToggle', 'hotJoin', 'step', 'resize',
 ];
 
@@ -41,7 +41,8 @@ function makeCtx() {
   return ctx;
 }
 
-function loadGame({ width = 1280, height = 720, dpr = 1 } = {}) {
+/** title: true — остаться на титульном экране; иначе сразу начать игру на одного. */
+function loadGame({ width = 1280, height = 720, dpr = 1, title = false, players = 1 } = {}) {
   const listeners = {};
   const winListeners = {};
   const raf = [];
@@ -64,6 +65,11 @@ function loadGame({ width = 1280, height = 720, dpr = 1 } = {}) {
   }).join(',\n');
   const body = `${extractScript()}\n;return {${accessors}};`;
   const api = new Function('document', 'window', body)(document, window);
+  if (!title) {
+    api.startGame(players);
+    // задержка после старта нужна только живой игре; тестам удобнее стрелять сразу
+    api.players.forEach((p) => { p.cooldown = 0; });
+  }
 
   const key = (type, k, code) => {
     const e = { key: k, code: code || '', prevented: false, preventDefault() { this.prevented = true; } };
