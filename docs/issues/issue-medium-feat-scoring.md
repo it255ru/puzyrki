@@ -2,7 +2,7 @@
 
 - **Важность:** medium
 - **Тип:** feature
-- **Статус:** open
+- **Статус:** done (PR feat/scoring)
 - **Решение:** [decisions.md п. 4](../decisions.md) — вариант A
 
 ## Требование

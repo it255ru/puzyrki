@@ -233,7 +233,7 @@ test('HUD: жизни каждого игрока своим цветом, у в
 test('HUD: блоки жизней не накладываются и помещаются на экране', () => {
   const t = loadGame({ players: 2 });
   t.clearCalls(); t.g.paint();
-  const xs = t.ctx.calls.filter((c) => c[0] === 'fillText' && c[1].startsWith('Игрок')).map((c) => c[2]);
+  const xs = t.ctx.calls.filter((c) => c[0] === 'fillText' && /^Игрок \d: [♥✖]/.test(c[1])).map((c) => c[2]);
   assert.equal(xs.length, 2);
   assert.ok(Math.abs(xs[0] - xs[1]) >= t.g.HUD_PLAYER_WIDTH);
   assert.ok(xs.every((x) => x <= t.g.c.w));
