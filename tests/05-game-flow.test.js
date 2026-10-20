@@ -18,7 +18,7 @@ test('касание шара: −1 жизнь, уровень перезапу�
   assert.equal(t.g.gameState, 'playing');
   assert.ok(t.g.invulnerableTimer > 0);
   assert.equal(t.g.harpoons.length, 0);
-  assert.equal(t.g.currentLevel.length, t.g.levels[0].length);
+  assert.equal(t.g.currentLevel.length, t.g.levels[0].balls.length);
 });
 
 test('во время неуязвимости касание не отнимает жизнь', () => {
@@ -79,7 +79,7 @@ test('очистка уровня: пауза 90 кадров, затем сле
   assert.equal(t.g.level, 1);
   assert.equal(t.g.levelCountdown, 90);
   t.ticks(95);
-  assert.equal(t.g.currentLevel.length, t.g.levels[1].length);
+  assert.equal(t.g.currentLevel.length, t.g.levels[1].balls.length);
   assert.equal(t.g.gameState, 'playing');
 });
 
