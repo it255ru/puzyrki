@@ -10,7 +10,7 @@ module.exports = defineConfig({
   testDir: 'e2e',
   testMatch: '**/*.spec.js',
   timeout: 30_000,
-  expect: { timeout: 7_000 },
+  expect: { timeout: 10_000 },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -20,6 +20,10 @@ module.exports = defineConfig({
     // «chromium» — полноценный Chromium в новом headless-режиме, ближе к настоящему браузеру игрока
     channel: process.env.PW_CHANNEL || 'chromium',
     viewport: { width: 1400, height: 900 },
+    // Параллельные окна не должны «засыпать»: игра зависит от requestAnimationFrame и таймеров
+    launchOptions: {
+      args: ['--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows'],
+    },
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

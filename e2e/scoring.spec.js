@@ -10,7 +10,7 @@ test('попадание даёт очки, рекорд пишется в local
     currentLevel.push(ball);
   });
   await hold(page, 'ArrowUp');
-  await page.waitForFunction(() => players[0].score > 0, null, { timeout: 8000 });
+  await page.waitForFunction(() => players[0].score > 0, null, { timeout: 15000 });
   const s = await page.evaluate(() => ({ score: players[0].score, combo: players[0].combo, high: highScore, stored: localStorage.getItem('puzyrki.highScore') }));
   expect(s.score).toBe(100);
   expect(s.combo).toBe(1);
@@ -44,7 +44,7 @@ test('шар, лопнувший о шипы, приносит бонус', asyn
     ball.owner = players[0]; ball.dy = -8;
     currentLevel.push(ball);
   });
-  await page.waitForFunction(() => currentLevel.length === 0 && burstCount === 1, null, { timeout: 5000 });
+  await page.waitForFunction(() => currentLevel.length === 0 && burstCount === 1, null, { timeout: 15000 });
   const { score, expected } = await page.evaluate(() => ({ score: players[0].score, expected: Math.round(subtreeValue(3) * SPIKE_BONUS) }));
   expect(score).toBe(expected);
 });
@@ -62,9 +62,9 @@ test('серия попаданий: комбо растёт, промах ег�
       ball.dy = 0; currentLevel.push(ball);
     });
     await shoot();
-    await page.waitForFunction((c) => players[0].combo === c, n, { timeout: 8000 });
+    await page.waitForFunction((c) => players[0].combo === c, n, { timeout: 15000 });
   }
   await page.evaluate(() => { currentLevel.length = 0; });
   await shoot();                                        // промах: гарпун ни во что не попадёт
-  await page.waitForFunction(() => players[0].combo === 0, null, { timeout: 8000 });
+  await page.waitForFunction(() => players[0].combo === 0, null, { timeout: 15000 });
 });

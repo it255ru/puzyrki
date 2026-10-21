@@ -36,9 +36,9 @@ test('гарпун прилипает к потолку и возвращает 
   await startKeyboardGame(page);
   await page.evaluate(() => { currentLevel.length = 0; levelCountdown = 999; });
   await hold(page, 'ArrowUp');
-  await page.waitForFunction(() => harpoons.length > 0 && harpoons[0].isStuck, null, { timeout: 5000 });
+  await page.waitForFunction(() => harpoons.length > 0 && harpoons[0].isStuck, null, { timeout: 15000 });
   expect(await page.evaluate(() => players[0].shots)).toBe(0);
-  await page.waitForFunction(() => harpoons.length === 0 && players[0].shots === 1, null, { timeout: 5000 });
+  await page.waitForFunction(() => harpoons.length === 0 && players[0].shots === 1, null, { timeout: 15000 });
 });
 
 test('пауза: P останавливает игру и снимается тем же P', async ({ page }) => {

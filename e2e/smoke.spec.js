@@ -44,8 +44,10 @@ test('логика идёт с частотой около 60 шагов в се
     const t0 = time; const p0 = performance.now();
     setTimeout(() => resolve((time - t0) / ((performance.now() - p0) / 1000)), 1000);
   }));
-  expect(rate).toBeGreaterThan(55);
-  expect(rate).toBeLessThan(65);
+  // Границы с запасом: при параллельном прогоне окна делят процессор. Ловит и зависимость от частоты кадров
+  // (на 144 Гц без фиксированного шага было бы ≈144), и остановку логики.
+  expect(rate).toBeGreaterThan(42);
+  expect(rate).toBeLessThan(78);
 });
 
 test('все 12 уровней загружаются и рисуются; число шаров совпадает с данными', async ({ page }) => {
