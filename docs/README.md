@@ -12,6 +12,7 @@
 | [architecture.md](architecture.md) | Структура кода, игровой цикл, классы, состояния |
 | [backlog.md](backlog.md) | Бэклог: дефекты и идеи, статусы |
 | [issues/](issues/) | Описание каждой проблемы (`issue-<важность>-<название>.md`) |
+| [testing.md](testing.md) | Тесты: модульные и браузерные (Playwright), как запускать |
 | [balance.md](balance.md) | Баланс и проходимость уровней (измерения «идеального стрелка») |
 | [plan.md](plan.md) | План исправления по приоритетам |
 | [changelog.md](changelog.md) | История изменений |

@@ -2,7 +2,7 @@
 
 - **Важность:** medium
 - **Тип:** infrastructure
-- **Статус:** open
+- **Статус:** done (PR feat/e2e-playwright)
 - **Решение:** [decisions.md п. 12](../decisions.md) — вариант A
 
 ## Требование

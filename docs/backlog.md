@@ -43,7 +43,7 @@
 | F4 | medium | [Раздельные жизни](issues/issue-medium-feat-per-player-lives.md) | done |
 | F5 | medium | [Уровни как данные, кампания 10–15](issues/issue-medium-feat-level-data-and-campaign.md) | done |
 | F6 | medium | [Клавиши двух игроков, подключение второго](issues/issue-medium-feat-two-player-controls.md) | done |
-| F7 | medium | [Playwright smoke-тест в CI](issues/issue-medium-feat-browser-smoke-test.md) | open |
+| F7 | medium | [Playwright smoke-тест в CI](issues/issue-medium-feat-browser-smoke-test.md) | done |
 | F8 | low | [Звук](issues/issue-low-feat-sound.md) | open |
 | F9 | low | [Цвета и метки игроков](issues/issue-low-feat-player-colors-and-labels.md) | done |
 | F11 | high | [Новое управление: стрелки + мышь, меню выбора](issues/issue-high-feat-new-controls-arrows-and-mouse.md) | done |

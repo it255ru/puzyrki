@@ -5,6 +5,7 @@ on:
   pull_request:
 jobs:
   test:
+    name: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -12,3 +13,25 @@ jobs:
         with:
           node-version: 20
       - run: npm test
+
+  # Браузерные тесты: реальный Chromium, реальная отрисовка, клавиатура и мышь с захватом курсора
+  e2e:
+    name: e2e (Chromium)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
