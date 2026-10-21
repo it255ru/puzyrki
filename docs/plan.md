@@ -21,7 +21,7 @@
 | 8 ✅ | Раздельные жизни | [F4](issues/issue-medium-feat-per-player-lives.md) |
 | 8а ✅ | **Новое управление**: стрелки + мышь (Pointer Lock), меню выбора способа и числа игроков | [F11](issues/issue-high-feat-new-controls-arrows-and-mouse.md), закрывает [баг рестарта Enter](issues/issue-medium-restart-with-enter-adds-second-player.md) |
 | 9 ✅ | Очки, комбо, рекорд | [F3](issues/issue-medium-feat-scoring.md) |
-| 10 | Кампания 10–15 уровней, обучающие уровни, баланс | [F5, часть 2](issues/issue-medium-feat-level-data-and-campaign.md), [цвета уровня 5](issues/issue-low-level5-color-low-contrast.md) |
+| 10 ✅ | Кампания 10–15 уровней, обучающие уровни, баланс | [F5, часть 2](issues/issue-medium-feat-level-data-and-campaign.md), [цвета уровня 5](issues/issue-low-level5-color-low-contrast.md) |
 | 11 | Playwright smoke-тест в CI | [F7](issues/issue-medium-feat-browser-smoke-test.md) |
 | 12 | Звук | [F8](issues/issue-low-feat-sound.md) |
 | 13 | Чистка: HUD, отладка, метаданные, мёртвый код, ESLint, лицензия/ассеты | [HUD](issues/issue-low-hud-overlaps-player.md), [debug](issues/issue-low-debug-speed-always-active.md), [метаданные](issues/issue-low-no-accessibility-meta.md), [мёртвый код](issues/issue-low-unused-controls-and-stubs.md), [линтинг](issues/issue-low-lint-and-structure.md), [F10](issues/issue-low-docs-license-and-assets-policy.md) |

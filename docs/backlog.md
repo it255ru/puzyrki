@@ -27,7 +27,7 @@
 | 9b | medium | [Автотесты и CI](issues/issue-medium-no-automated-tests-and-ci.md) | in progress |
 | 10 | low | [Debug-скорость всегда активна](issues/issue-low-debug-speed-always-active.md) | open |
 | 11 | low | [HUD перекрывает игрока, смесь языков](issues/issue-low-hud-overlaps-player.md) | open |
-| 12 | low | [Низкий контраст шаров 5-го уровня](issues/issue-low-level5-color-low-contrast.md) | open |
+| 12 | low | [Низкий контраст шаров 5-го уровня](issues/issue-low-level5-color-low-contrast.md) | done |
 | 13 | low | [Мёртвый код и заглушки](issues/issue-low-unused-controls-and-stubs.md) | open |
 | 14 | low | [Линтинг и структура](issues/issue-low-lint-and-structure.md) | open |
 | 15a | low | [Шар размера 6 вылетает за верх](issues/issue-low-biggest-ball-exits-top.md) | done |
@@ -41,7 +41,7 @@
 | F2 | medium | [Потолок с шипами и прилипающий гарпун](issues/issue-medium-feat-spike-ceiling-sticky-harpoon.md) | done |
 | F3 | medium | [Очки, комбо, рекорд](issues/issue-medium-feat-scoring.md) | done |
 | F4 | medium | [Раздельные жизни](issues/issue-medium-feat-per-player-lives.md) | done |
-| F5 | medium | [Уровни как данные, кампания 10–15](issues/issue-medium-feat-level-data-and-campaign.md) | in progress |
+| F5 | medium | [Уровни как данные, кампания 10–15](issues/issue-medium-feat-level-data-and-campaign.md) | done |
 | F6 | medium | [Клавиши двух игроков, подключение второго](issues/issue-medium-feat-two-player-controls.md) | done |
 | F7 | medium | [Playwright smoke-тест в CI](issues/issue-medium-feat-browser-smoke-test.md) | open |
 | F8 | low | [Звук](issues/issue-low-feat-sound.md) | open |
