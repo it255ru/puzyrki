@@ -23,6 +23,7 @@
 | 9 ✅ | Очки, комбо, рекорд | [F3](issues/issue-medium-feat-scoring.md) |
 | 10 ✅ | Кампания 10–15 уровней, обучающие уровни, баланс | [F5, часть 2](issues/issue-medium-feat-level-data-and-campaign.md), [цвета уровня 5](issues/issue-low-level5-color-low-contrast.md) |
 | 11 ✅ | Playwright smoke-тест в CI | [F7](issues/issue-medium-feat-browser-smoke-test.md) |
+| 11а | **Мобильная версия**: сенсорные кнопки ◀ ▶ и «огонь», один игрок, альбомная ориентация 16:9, поворот и жесты, кнопка паузы, мобильные e2e | [F12](issues/issue-medium-feat-mobile-touch-controls.md) |
 | 12 | Звук | [F8](issues/issue-low-feat-sound.md) |
 | 13 | Чистка: HUD, отладка, метаданные, мёртвый код, ESLint, лицензия/ассеты | [HUD](issues/issue-low-hud-overlaps-player.md), [debug](issues/issue-low-debug-speed-always-active.md), [метаданные](issues/issue-low-no-accessibility-meta.md), [мёртвый код](issues/issue-low-unused-controls-and-stubs.md), [линтинг](issues/issue-low-lint-and-structure.md), [F10](issues/issue-low-docs-license-and-assets-policy.md) |
 
@@ -33,4 +34,5 @@
 - 4 до 5–6: подбрасывание нельзя подбирать, пока шаг логики зависит от частоты кадров.
 - 5 → 6 → 7: шипы и правила лопания считаются от новой физики.
 - 10 (баланс) после 5–9; 11 (Playwright) можно раньше, лучше сразу после 4, чтобы страховать визуальные правки.
-- 12 независим, но требует экрана «Нажмите любую клавишу» из шага 3.
+- 11а до 12: звуку нужен жест пользователя из меню (на телефоне — касание), поэтому сенсорное меню делается раньше.
+- 12 независим, но запускает звук из жеста в меню (шаг 8а) и из касания (шаг 11а).
