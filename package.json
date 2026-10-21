@@ -5,7 +5,14 @@
   "description": "Пузырьки — аркада для 1–2 игроков в одном HTML-файле",
   "scripts": {
     "test": "node --test tests/",
-    "test:watch": "node --test --watch tests/"
+    "test:watch": "node --test --watch tests/",
+    "test:e2e": "playwright test",
+    "test:all": "npm test && npm run test:e2e"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  }
 }
